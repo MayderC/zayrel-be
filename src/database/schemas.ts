@@ -9,7 +9,12 @@ import { Document, Types } from 'mongoose';
 // USER
 // -----------------------------
 // Represents a user in the system with personal details, authentication information, and roles.
-export type UserDocument = User & Document;
+export type UserDocument = User &
+  Document & {
+    createdAt: Date;
+    updatedAt: Date;
+  };
+
 @Schema({ timestamps: true, collection: 'users' })
 export class User {
   @Prop({ required: true }) firstname: string;
