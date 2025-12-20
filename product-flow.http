@@ -1,0 +1,154 @@
+@api = http://localhost:3001
+@authToken = {{login.response.body.accessToken}}
+
+# ----------------- 1. AUTHENTICATION -----------------
+# First, you must login as an ADMIN to perform these actions.
+
+### Login as Admin
+# @name login
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "newuser@example.com", 
+  "password": "Password123!"
+}
+
+# ----------------- 2. CREATE DEPENDENCIES -----------------
+# Before creating a product, you need Categories, Colors, and Sizes.
+
+### Create Category "Camisetas"
+# @name createCategory
+POST {{api}}/products/categories
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "name": "Camisetas",
+  "description": "Camisetas de alta calidad para todos",
+  "icon": "shirt",
+  "slug": "camisetas"
+}
+
+### Create Categories - Subcategory (Optional)
+POST {{api}}/products/categories
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "name": "Oversize",
+  "description": "Estilo urbano amplio",
+  "parentCategory": "{{createCategory.response.body._id}}"
+}
+
+### Create Color "Negro"
+# @name createColorBlack
+POST {{api}}/products/colors
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "name": "Negro",
+  "hex": "#000000"
+}
+
+### Create Color "Blanco"
+# @name createColorWhite
+POST {{api}}/products/colors
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "name": "Blanco",
+  "hex": "#FFFFFF"
+}
+
+### Create Size "M"
+# @name createSizeM
+POST {{api}}/products/sizes
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "name": "M"
+}
+
+### Create Size "L"
+# @name createSizeL
+POST {{api}}/products/sizes
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "name": "L"
+}
+
+# ----------------- 3. CREATE PRODUCT (BASE) -----------------
+# This is the generic product definition (Name, Description, Price).
+# It does NOT have specific stock yet.
+
+### Create Product
+# @name createProduct
+POST {{api}}/products
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "name": "Camiseta Oversize Premium",
+  "slug": "camiseta-oversize-premium-v2", 
+  "description": "Algodón 100% orgánico, corte perfecto.",
+  "price": 25000,
+  "images": [] 
+}
+
+# ----------------- 4. CREATE VARIANTS (SKUs) -----------------
+# Connect Product + Color + Size + Stock.
+
+### Create Variant (Black / M)
+# @name createVariantBlackM
+POST {{api}}/products/variants
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "productId": "{{createProduct.response.body._id}}",
+  "color": "{{createColorBlack.response.body._id}}",
+  "size": "{{createSizeM.response.body._id}}",
+  "stock": 50,
+  "isAvailable": true
+}
+
+### Create Variant (Black / L)
+POST {{api}}/products/variants
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "productId": "{{createProduct.response.body._id}}",
+  "color": "{{createColorBlack.response.body._id}}",
+  "size": "{{createSizeL.response.body._id}}",
+  "stock": 30,
+  "isAvailable": true
+}
+
+# ----------------- 5. CREATE LISTING (CATALOG) -----------------
+# This puts the specific Variant into the Store Catalog (Viewable by users).
+# Usually, you list one representative variant per product group, or all of them.
+
+### Create Listing for Store
+POST {{api}}/products/listings
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "variant": "{{createVariantBlackM.response.body._id}}",
+  "isActive": true,
+  "category": "{{createCategory.response.body._id}}",
+  "isNewArrival": true,
+  "tags": ["verano", "algodon"]
+}
+
+# ----------------- VERIFICATION -----------------
+
+### List All Listings (Store View)
+GET {{api}}/products/listings

@@ -5,6 +5,7 @@ import { Variant, VariantSchema } from '../database/schemas';
 import { ProductListing, ProductListingSchema } from '../database/schemas';
 import { Color, ColorSchema } from '../database/schemas';
 import { Size, SizeSchema } from '../database/schemas';
+import { Category, CategorySchema } from '../database/schemas';
 import { ProductsController } from './products.controller';
 import { ProductsService } from './products.service';
 
@@ -16,10 +17,11 @@ import { ProductsService } from './products.service';
       { name: ProductListing.name, schema: ProductListingSchema },
       { name: Color.name, schema: ColorSchema },
       { name: Size.name, schema: SizeSchema },
+      { name: Category.name, schema: CategorySchema },
     ]),
   ],
   controllers: [ProductsController],
   providers: [ProductsService],
   exports: [ProductsService],
 })
-export class ProductsModule {}
+export class ProductsModule { }

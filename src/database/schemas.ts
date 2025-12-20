@@ -25,6 +25,30 @@ export class User {
   @Prop({ default: false }) isEmailVerified: boolean; // true if email is verified
   @Prop({ default: false }) isBanned: boolean; // true if user is banned
   @Prop({ default: false }) isDeleted: boolean; // true if user is deleted
+
+  @Prop({
+    type: [{
+      label: { type: String }, // e.g., 'Home', 'Office'
+      street: { type: String },
+      city: { type: String },
+      state: { type: String },
+      zipRegion: { type: String },
+      country: { type: String },
+      phone: { type: String },
+      isDefault: { type: Boolean, default: false }
+    }],
+    default: []
+  })
+  addresses: {
+    label: string;
+    street: string;
+    city: string;
+    state: string;
+    zipRegion: string;
+    country: string;
+    phone: string;
+    isDefault: boolean;
+  }[];
 }
 export const UserSchema = SchemaFactory.createForClass(User);
 
@@ -63,6 +87,12 @@ export class Variant {
   @Prop({ type: Types.ObjectId, ref: Size.name, required: true }) size: Types.ObjectId;
   @Prop({ default: 0 }) stock: number;
   @Prop({ default: true }) isAvailable: boolean;
+
+  // Inventory Enhancements
+  @Prop({ unique: true, sparse: true }) sku?: string; // Stock Keeping Unit
+  @Prop({ default: 0 }) costPrice?: number; // Cost price for profit calculation
+  @Prop({ default: 5 }) lowStockThreshold?: number; // Alert threshold
+  @Prop() location?: string; // Warehouse location
 }
 export const VariantSchema = SchemaFactory.createForClass(Variant);
 
@@ -93,12 +123,33 @@ export type ProductDocument = Product & Document;
 @Schema({ timestamps: true, collection: 'products' })
 export class Product {
   @Prop({ required: true }) name: string;
+  @Prop({ required: true, unique: true }) slug: string;
   @Prop() description?: string;
   @Prop({ required: true }) price: number;
   @Prop({ type: [Types.ObjectId], ref: Image.name }) images: Types.ObjectId[];
   @Prop({ type: Types.ObjectId, ref: User.name }) creator?: Types.ObjectId;
+  @Prop({
+    type: [{
+      size: { type: Types.ObjectId, ref: 'Size', required: true },
+      widthCm: { type: Number, required: true },
+      heightCm: { type: Number, required: true }
+    }],
+    default: []
+  })
+  sizeMeasurements: { size: Types.ObjectId; widthCm: number; heightCm: number }[];
 }
 export const ProductSchema = SchemaFactory.createForClass(Product);
+
+// Virtual populate: get all variants for this product
+ProductSchema.virtual('variants', {
+  ref: 'Variant',
+  localField: '_id',
+  foreignField: 'product',
+});
+
+// Ensure virtuals are included in JSON output
+ProductSchema.set('toJSON', { virtuals: true });
+ProductSchema.set('toObject', { virtuals: true });
 
 // -----------------------------
 // ORDER_ITEM
@@ -203,8 +254,64 @@ export const ProductListingSchema = SchemaFactory.createForClass(ProductListing)
 export type OrderDocument = Order & Document;
 @Schema({ timestamps: true, collection: 'orders' })
 export class Order {
-  @Prop({ type: Types.ObjectId, ref: User.name, required: true }) user: Types.ObjectId;
-  @Prop({ default: 'pending', enum: ['pending', 'paid', 'shipped', 'completed', 'cancelled'] })
+  @Prop({ type: Types.ObjectId, ref: User.name, required: false }) user?: Types.ObjectId; // Optional for manual sales
+
+  @Prop({
+    type: {
+      name: { type: String, required: true },
+      contact: { type: String },
+      email: { type: String },
+    },
+    _id: false,
+  })
+  guestInfo?: { name: string; contact?: string; email?: string };
+
+  @Prop({
+    type: {
+      street: { type: String },
+      city: { type: String },
+      state: { type: String },
+      zipRegion: { type: String }, // Zip or Region/Canton
+      country: { type: String },
+      phone: { type: String },
+    },
+    _id: false
+  })
+  shippingAddress?: {
+    street: string;
+    city: string;
+    state: string;
+    zipRegion: string;
+    country: string;
+    phone: string;
+  };
+
+  @Prop() trackingNumber?: string;
+  @Prop() shippingProvider?: string;
+
+  @Prop({ default: 'online', enum: ['online', 'manual_sale'] })
+  orderType: string;
+
+  @Prop({
+    type: {
+      url: { type: String },
+      type: { type: String, enum: ['transfer', 'sinpe', 'other'] },
+      reference: { type: String },
+      status: { type: String, enum: ['pending', 'verified', 'rejected'], default: 'pending' },
+    },
+    _id: false,
+  })
+  paymentProof?: {
+    url: string;
+    type: string;
+    reference?: string;
+    status: string;
+  };
+
+  @Prop({
+    default: 'pendiente',
+    enum: ['pendiente', 'esperando_pago', 'pagada', 'en_produccion', 'enviada', 'completada', 'cancelada', 'archivada']
+  })
   status: string;
 }
 export const OrderSchema = SchemaFactory.createForClass(Order);

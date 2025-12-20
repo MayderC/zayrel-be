@@ -12,7 +12,7 @@ import { CreateUserDto, UpdateUserDto, UserResponseDto } from './dtos';
 
 @Injectable()
 export class UsersService {
-  constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
+  constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) { }
 
   async create(createUserDto: CreateUserDto): Promise<UserResponseDto> {
     // Verificar si el email ya existe
@@ -55,8 +55,12 @@ export class UsersService {
     return this.toUserResponseDto(user);
   }
 
-  async findByEmail(email: string): Promise<UserDocument | null> {
-    return this.userModel.findOne({ email, isDeleted: false });
+  async findByEmail(email: string, includePassword = false): Promise<UserDocument | null> {
+    const query = this.userModel.findOne({ email, isDeleted: false });
+    if (includePassword) {
+      query.select('+password');
+    }
+    return query;
   }
 
   async update(id: string, updateUserDto: UpdateUserDto): Promise<UserResponseDto> {

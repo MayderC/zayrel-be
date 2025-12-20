@@ -1,0 +1,213 @@
+@api = http://localhost:3001
+@token = {{login.response.body.accessToken}}
+@refreshToken = {{login.response.body.refreshToken}}
+### Auth Config
+# @name login
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "newuser@example.com",
+    "password": "Password123!"
+}
+
+### Auth
+POST {{api}}/auth/register
+Content-Type: application/json
+
+{
+    "email": "newuser@example.com",
+    "password": "Password123!",
+    "firstname": "John",
+    "lastname": "Doe"
+}
+
+###
+POST {{api}}/auth/refresh
+Content-Type: application/json
+
+{
+    "refreshToken": "{{refreshToken}}"
+}
+
+###
+GET {{api}}/auth/profile
+Authorization: Bearer {{token}}
+
+###
+POST {{api}}/auth/change-password
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "currentPassword": "Password123!",
+    "newPassword": "NewPassword123!"
+}
+
+###
+POST {{api}}/auth/forgot-password
+Content-Type: application/json
+
+{
+    "email": "test@example.com"
+}
+
+###
+POST {{api}}/auth/reset-password
+Content-Type: application/json
+
+{
+    "token": "reset_token_here",
+    "newPassword": "NewPassword123!"
+}
+
+###
+POST {{api}}/auth/logout
+Authorization: Bearer {{token}}
+
+### Users
+GET {{api}}/users
+Authorization: Bearer {{token}}
+
+###
+GET {{api}}/users/stats
+Authorization: Bearer {{token}}
+
+###
+GET {{api}}/users/693f1cc8fa8096dab45675a2
+Authorization: Bearer {{token}}
+
+###
+PATCH {{api}}/users/693f1cc8fa8096dab45675a2
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "firstname": "Updated Name"
+}
+
+###
+DELETE {{api}}/users/693f1cc8fa8096dab45675a2
+Authorization: Bearer {{token}}
+
+###
+PATCH {{api}}/users/693f1cc8fa8096dab45675a2/ban
+Authorization: Bearer {{token}}
+
+###
+PATCH {{api}}/users/693f1cc8fa8096dab45675a2/unban
+Authorization: Bearer {{token}}
+
+###
+PATCH {{api}}/users/693f1cc8fa8096dab45675a2/verify-email
+Authorization: Bearer {{token}}
+
+### Products - Products
+POST {{api}}/products
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "name": "New Product",
+    "description": "Product Description",
+    "categoryId": "CATEGORY_ID"
+}
+
+###
+PUT {{api}}/products/693f1cc8fa8096dab45675a2
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "name": "Updated Product Name"
+}
+
+###
+DELETE {{api}}/products/693f1cc8fa8096dab45675a2
+Authorization: Bearer {{token}}
+
+###
+GET {{api}}/products
+
+### Products - Variants
+POST {{api}}/products/variants
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "productId": "PRODUCT_ID",
+    "sku": "SKU-123",
+    "price": 100
+}
+
+###
+PUT {{api}}/products/variants/VARIANT_ID_HERE
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "price": 150
+}
+
+###
+DELETE {{api}}/products/variants/VARIANT_ID_HERE
+Authorization: Bearer {{token}}
+
+###
+GET {{api}}/products/variants
+
+### Products### Create Product with Slug
+POST http://localhost:3001/products
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Camiseta Oversize Negra",
+  "slug": "camiseta-oversize-negra",
+  "description": "Una camiseta increíble para el verano.",
+  "price": 25000
+}
+
+### Get Product by Slug
+GET http://localhost:3001/products/camiseta-oversize-negra
+
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "productId": "PRODUCT_ID",
+
+### Products - Listings
+POST {{api}}/products/listings
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "productId": "PRODUCT_ID",
+    "title": "Product Listing Title"
+}
+
+###
+PUT {{api}}/products/listings/LISTING_ID_HERE
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "title": "Updated Listing Title"
+}
+
+###
+DELETE {{api}}/products/listings/LISTING_ID_HERE
+Authorization: Bearer {{token}}
+
+###
+GET {{api}}/products/listings
+
+### Search Products
+GET {{api}}/products/search?q=camiseta
+
+### Search Products - Empty Query
+GET {{api}}/products/search?q=
+
+### Search Products - No Results
+GET {{api}}/products/search?q=producto-inexistente

@@ -8,6 +8,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
 import { UsersService } from '../users/users.service';
+import { MailService } from '../mail/mail.service';
 import {
   LoginDto,
   RegisterDto,
@@ -30,12 +31,23 @@ export class AuthService {
     private usersService: UsersService,
     private jwtService: JwtService,
     private configService: ConfigService,
-  ) {}
+    private mailService: MailService,
+  ) { }
 
   async register(registerDto: RegisterDto): Promise<AuthResponseDto> {
     try {
       // Crear el usuario usando el servicio de usuarios
       const user = await this.usersService.create(registerDto);
+
+      // Enviar correo de bienvenida
+      /* try {
+        await this.mailService.sendUserWelcome({
+          email: user.email,
+          name: user.firstname,
+        });
+      } catch (error) {
+        console.error('Error sending welcome email', error);
+      } */
 
       // Generar tokens
       const tokens = await this.generateTokens(user);
@@ -88,7 +100,7 @@ export class AuthService {
   }
 
   async validateUser(email: string, password: string): Promise<UserResponseDto | null> {
-    const user = await this.usersService.findByEmail(email);
+    const user = await this.usersService.findByEmail(email, true);
 
     if (user && (await bcrypt.compare(password, user.password))) {
       return {
@@ -147,7 +159,7 @@ export class AuthService {
     );
   }
 
-  async refreshToken(refreshToken: string): Promise<{ accessToken: string }> {
+  async refreshToken(refreshToken: string): Promise<{ accessToken: string; refreshToken: string }> {
     try {
       const payload = this.jwtService.verify<JwtPayload>(refreshToken, {
         secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
@@ -159,19 +171,12 @@ export class AuthService {
         throw new UnauthorizedException('Token inválido');
       }
 
-      const accessToken = this.jwtService.sign(
-        {
-          sub: user._id,
-          email: user.email,
-          role: user.role,
-        },
-        {
-          secret: this.configService.get<string>('JWT_SECRET'),
-          expiresIn: this.configService.get<string>('JWT_EXPIRATION', '15m'),
-        },
-      );
+      const tokens = await this.generateTokens(user);
 
-      return { accessToken };
+      return {
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+      };
     } catch {
       throw new UnauthorizedException('Token de refresh inválido');
     }

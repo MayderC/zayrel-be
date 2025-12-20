@@ -12,7 +12,7 @@ services:
     ports:
       - "27017:27017"
     volumes:
-      - mongodb_data:/data/db
+      - ./mongo_data:/data/db
       - ./mongo-init:/docker-entrypoint-initdb.d
     networks:
       - zayrel-network
@@ -33,10 +33,6 @@ services:
       - mongodb
     networks:
       - zayrel-network
-
-volumes:
-  mongodb_data:
-    driver: local
 
 networks:
   zayrel-network:
