@@ -1,4 +1,4 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Prop, Schema, SchemaFactory, raw } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 
 /**
@@ -252,6 +252,25 @@ export const ProductListingSchema = SchemaFactory.createForClass(ProductListing)
 // -----------------------------
 // Represents an order placed by a user, with status tracking.
 export type OrderDocument = Order & Document;
+@Schema({ _id: false })
+export class PaymentProof {
+  @Prop({ required: false })
+  url: string;
+
+  @Prop({ required: false, enum: ['transfer', 'sinpe', 'other'] })
+  method: string;
+
+  @Prop()
+  reference?: string;
+
+  @Prop({ default: 'pending', enum: ['pending', 'verified', 'rejected'] })
+  status: string;
+
+  @Prop()
+  reason?: string;
+}
+export const PaymentProofSchema = SchemaFactory.createForClass(PaymentProof);
+
 @Schema({ timestamps: true, collection: 'orders' })
 export class Order {
   @Prop({ type: Types.ObjectId, ref: User.name, required: false }) user?: Types.ObjectId; // Optional for manual sales
@@ -289,28 +308,17 @@ export class Order {
   @Prop() trackingNumber?: string;
   @Prop() shippingProvider?: string;
 
+
+
   @Prop({ default: 'online', enum: ['online', 'manual_sale'] })
   orderType: string;
 
-  @Prop({
-    type: {
-      url: { type: String },
-      type: { type: String, enum: ['transfer', 'sinpe', 'other'] },
-      reference: { type: String },
-      status: { type: String, enum: ['pending', 'verified', 'rejected'], default: 'pending' },
-    },
-    _id: false,
-  })
-  paymentProof?: {
-    url: string;
-    type: string;
-    reference?: string;
-    status: string;
-  };
+  @Prop({ type: PaymentProofSchema })
+  paymentProof?: PaymentProof;
 
   @Prop({
-    default: 'pendiente',
-    enum: ['pendiente', 'esperando_pago', 'pagada', 'en_produccion', 'enviada', 'completada', 'cancelada', 'archivada']
+    default: 'esperando_pago',
+    enum: ['esperando_pago', 'pagada', 'en_produccion', 'enviada', 'completada', 'cancelada', 'archivada']
   })
   status: string;
 }

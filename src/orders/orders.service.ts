@@ -1,4 +1,6 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Inject } from '@nestjs/common';
+import { IPaymentStorageService } from '../storage/interfaces/payment-storage.interface';
+import { NotificationsService } from '../notifications/notifications.service';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Order, OrderDocument, OrderItem, OrderItemDocument, Variant, VariantDocument, Product, ProductDocument } from '../database/schemas';
@@ -11,6 +13,8 @@ export class OrdersService {
         @InjectModel(OrderItem.name) private orderItemModel: Model<OrderItemDocument>,
         @InjectModel(Variant.name) private variantModel: Model<VariantDocument>,
         @InjectModel(Product.name) private productModel: Model<ProductDocument>,
+        private notificationsService: NotificationsService,
+        @Inject('PAYMENT_STORAGE') private storageService: IPaymentStorageService
     ) { }
 
     async create(createOrderDto: CreateOrderDto) {
@@ -50,7 +54,7 @@ export class OrdersService {
             guestInfo: createOrderDto.guestInfo,
             shippingAddress: createOrderDto.shippingAddress,
             orderType: createOrderDto.orderType || 'online',
-            status: createOrderDto.orderType === 'manual_sale' ? 'pagada' : 'pendiente',
+            status: createOrderDto.orderType === 'manual_sale' ? 'pagada' : 'esperando_pago',
         });
         const savedOrder = await newOrder.save();
 
@@ -101,22 +105,58 @@ export class OrdersService {
             path: 'variantId',
             populate: { path: 'product size color' }
         }).exec();
-        return { ...order.toObject(), items };
+        const total = items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
+        return { ...order.toObject(), items, total };
     }
 
     async updatePaymentProof(id: string, proofDto: UpdatePaymentProofDto) {
         const order = await this.orderModel.findById(id);
         if (!order) throw new NotFoundException('Order not found');
 
+        const currentProof = order.paymentProof || {} as any;
+        let storedUrl = currentProof.url;
+
+        // Only upload/store new file if URL is provided (base64)
+        if (proofDto.url) {
+            storedUrl = await this.storageService.store(proofDto.url, String(order._id));
+        }
+
         order.paymentProof = {
-            url: proofDto.url,
-            type: proofDto.type,
-            reference: proofDto.reference,
-            status: proofDto.status || 'pending'
+            url: storedUrl,
+            method: proofDto.type || currentProof.method, // Keep existing if not provided
+            reference: proofDto.reference || currentProof.reference,
+            status: proofDto.status || currentProof.status || 'pending',
+            reason: proofDto.reason // Always update reason if provided (or clear it? usually specific to status update)
         };
 
+        if (proofDto.reason !== undefined) {
+            order.paymentProof.reason = proofDto.reason;
+        } else {
+            // Keep existing reason if not specified? Or maybe clean if approved?
+            // For now, let's keep existing behavior or use simple assignment above if stricter.
+            // Actually, simplified approach:
+            order.paymentProof.reason = proofDto.reason || (proofDto.status === 'verified' ? undefined : currentProof.reason);
+        }
+
+        // Simplified assignment block to replace above complex logic for reason:
+        order.paymentProof = {
+            url: storedUrl,
+            method: proofDto.type || currentProof.method,
+            reference: proofDto.reference || currentProof.reference,
+            status: proofDto.status || currentProof.status || 'pending',
+            reason: proofDto.reason || (proofDto.status === 'verified' ? undefined : currentProof.reason)
+        };
+
+
         if (proofDto.status === 'verified') {
-            order.status = 'paid';
+            order.status = 'pagada';
+            // TODO: Uncomment to enable notifications
+            await this.notificationsService.notifyPaymentApproved(order);
+        }
+
+        if (proofDto.status === 'rejected') {
+            // TODO: Uncomment to enable notifications
+            await this.notificationsService.notifyPaymentRejected(order, proofDto.reason);
         }
 
         return order.save();

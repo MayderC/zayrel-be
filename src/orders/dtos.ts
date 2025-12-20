@@ -73,11 +73,13 @@ export class CreateOrderDto {
 }
 
 export class UpdatePaymentProofDto {
+    @IsOptional()
     @IsString()
-    url: string;
+    url?: string;
 
+    @IsOptional()
     @IsEnum(['transfer', 'sinpe', 'other'])
-    type: string;
+    type?: string;
 
     @IsOptional()
     @IsString()
@@ -86,6 +88,10 @@ export class UpdatePaymentProofDto {
     @IsEnum(['pending', 'verified', 'rejected'])
     @IsOptional()
     status?: string = 'pending';
+
+    @IsOptional()
+    @IsString()
+    reason?: string;
 }
 
 export class UpdateOrderTrackingDto {
