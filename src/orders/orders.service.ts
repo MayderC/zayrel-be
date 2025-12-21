@@ -150,7 +150,11 @@ export class OrdersService {
 
 
         if (proofDto.status === 'verified') {
-            order.status = 'pagada';
+            // Only advance to 'pagada' if currently waiting for payment
+            // Don't regress orders that are already further in the pipeline
+            if (order.status === 'esperando_pago') {
+                order.status = 'pagada';
+            }
             // TODO: Uncomment to enable notifications
             await this.notificationsService.notifyPaymentApproved(order);
         }
@@ -180,6 +184,15 @@ export class OrdersService {
 
         const previousStatus = order.status;
         order.status = status as any;
+
+        // Sync paymentProof.status when order moves to a "paid" state
+        // If order is marked as pagada, en_produccion, enviada, or completada,
+        // the payment should be considered verified
+        const paidStatuses = ['pagada', 'en_produccion', 'enviada', 'completada'];
+        if (paidStatuses.includes(status) && order.paymentProof?.status === 'pending') {
+            order.paymentProof.status = 'verified';
+        }
+
         await order.save();
 
         // Award +5 VTO tokens when order is marked as completed
