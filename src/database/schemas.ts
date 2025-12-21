@@ -25,6 +25,7 @@ export class User {
   @Prop({ default: false }) isEmailVerified: boolean; // true if email is verified
   @Prop({ default: false }) isBanned: boolean; // true if user is banned
   @Prop({ default: false }) isDeleted: boolean; // true if user is deleted
+  @Prop({ default: 4 }) vtoTokens: number; // Virtual Try-On tokens (4 free, +5 per purchase)
 
   @Prop({
     type: [{

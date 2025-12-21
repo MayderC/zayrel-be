@@ -3,7 +3,7 @@ import { IPaymentStorageService } from '../storage/interfaces/payment-storage.in
 import { NotificationsService } from '../notifications/notifications.service';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { Order, OrderDocument, OrderItem, OrderItemDocument, Variant, VariantDocument, Product, ProductDocument } from '../database/schemas';
+import { Order, OrderDocument, OrderItem, OrderItemDocument, Variant, VariantDocument, Product, ProductDocument, User, UserDocument } from '../database/schemas';
 import { CreateOrderDto, UpdatePaymentProofDto } from './dtos';
 
 @Injectable()
@@ -13,6 +13,7 @@ export class OrdersService {
         @InjectModel(OrderItem.name) private orderItemModel: Model<OrderItemDocument>,
         @InjectModel(Variant.name) private variantModel: Model<VariantDocument>,
         @InjectModel(Product.name) private productModel: Model<ProductDocument>,
+        @InjectModel(User.name) private userModel: Model<UserDocument>,
         private notificationsService: NotificationsService,
         @Inject('PAYMENT_STORAGE') private storageService: IPaymentStorageService
     ) { }
@@ -177,8 +178,16 @@ export class OrdersService {
         const order = await this.orderModel.findById(id);
         if (!order) throw new NotFoundException('Order not found');
 
+        const previousStatus = order.status;
         order.status = status as any;
-        return order.save();
+        await order.save();
+
+        // Award +5 VTO tokens when order is marked as completed
+        if (status === 'completada' && previousStatus !== 'completada' && order.user) {
+            await this.userModel.findByIdAndUpdate(order.user, { $inc: { vtoTokens: 5 } });
+        }
+
+        return order;
     }
 
     // Cancel order: Returns stock and sets status to 'cancelada'
