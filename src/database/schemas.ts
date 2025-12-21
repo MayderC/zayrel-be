@@ -89,6 +89,9 @@ export class Variant {
   @Prop({ default: 0 }) stock: number;
   @Prop({ default: true }) isAvailable: boolean;
 
+  // Variant-specific image (optional - falls back to product images if not set)
+  @Prop() imageUrl?: string;
+
   // Inventory Enhancements
   @Prop({ unique: true, sparse: true }) sku?: string; // Stock Keeping Unit
   @Prop({ default: 0 }) costPrice?: number; // Cost price for profit calculation

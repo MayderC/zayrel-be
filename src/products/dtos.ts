@@ -100,6 +100,10 @@ export class CreateVariantDto {
   @IsOptional()
   @IsString()
   location?: string;
+
+  @IsOptional()
+  @IsString()
+  imageUrl?: string;
 }
 
 export class EditVariantDto {
@@ -134,6 +138,10 @@ export class EditVariantDto {
   @IsOptional()
   @IsString()
   location?: string;
+
+  @IsOptional()
+  @IsString()
+  imageUrl?: string;
 }
 
 export class CreateListingDto {
