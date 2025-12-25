@@ -98,6 +98,80 @@ export class MagicLinkToken {
 export const MagicLinkTokenSchema = SchemaFactory.createForClass(MagicLinkToken);
 
 // -----------------------------
+// CART ITEM (Embedded)
+// -----------------------------
+export class CartItem {
+  @Prop({ required: true, type: Types.ObjectId, ref: 'Variant' })
+  variantId: Types.ObjectId;
+
+  @Prop({ required: true, min: 1 })
+  quantity: number;
+
+  @Prop({ default: Date.now })
+  addedAt: Date;
+}
+export const CartItemSchema = SchemaFactory.createForClass(CartItem);
+
+// -----------------------------
+// CART
+// -----------------------------
+// Stores the shopping cart for logged-in users
+export type CartDocument = Cart & Document;
+
+@Schema({ timestamps: true, collection: 'carts' })
+export class Cart {
+  @Prop({ required: true, type: Types.ObjectId, ref: 'User', unique: true })
+  userId: Types.ObjectId;
+
+  @Prop({ type: [CartItemSchema], default: [] })
+  items: CartItem[];
+
+  @Prop({ type: String, default: null })
+  couponCode: string | null;
+
+  @Prop({ type: Date, default: null })
+  reminderSentAt: Date | null; // For abandoned cart email (only send once)
+
+  @Prop({ default: Date.now })
+  lastUpdated: Date;
+}
+export const CartSchema = SchemaFactory.createForClass(Cart);
+
+// -----------------------------
+// COUPON
+// -----------------------------
+// Discount coupons for orders
+export type CouponDocument = Coupon & Document;
+
+@Schema({ timestamps: true, collection: 'coupons' })
+export class Coupon {
+  @Prop({ required: true, unique: true, uppercase: true })
+  code: string; // e.g. "NAVIDAD2024"
+
+  @Prop({ required: true, enum: ['percentage', 'fixed'] })
+  type: 'percentage' | 'fixed';
+
+  @Prop({ required: true })
+  value: number; // 10 = 10% or ₡10,000
+
+  @Prop({ type: Number, default: null })
+  minPurchase: number | null; // Minimum order amount
+
+  @Prop({ type: Number, default: null })
+  maxUses: number | null; // Global usage limit
+
+  @Prop({ default: 0 })
+  currentUses: number;
+
+  @Prop({ type: Date, default: null })
+  expiresAt: Date | null;
+
+  @Prop({ default: true })
+  isActive: boolean;
+}
+export const CouponSchema = SchemaFactory.createForClass(Coupon);
+
+// -----------------------------
 // COLOR
 // -----------------------------
 // Represents a color with a unique name and hexadecimal value.
