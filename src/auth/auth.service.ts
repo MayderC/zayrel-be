@@ -47,22 +47,24 @@ export class AuthService {
       // Crear el usuario usando el servicio de usuarios
       const user = await this.usersService.create(registerDto);
 
-      // Create magic link for one-click login and send welcome email
-      try {
-        const magicToken = await this.createMagicLinkToken(user._id);
-        const frontendUrl = this.configService.get<string>('FRONTEND_URL', 'http://localhost:3000');
-        const magicLinkUrl = `${frontendUrl}/auth/magic-link?token=${magicToken}`;
+      // Create magic link for one-click login and send welcome email (non-blocking)
+      this.createMagicLinkToken(user._id)
+        .then(magicToken => {
+          const frontendUrl = this.configService.get<string>('FRONTEND_URL', 'http://localhost:3000');
+          const magicLinkUrl = `${frontendUrl}/auth/magic-link?token=${magicToken}`;
 
-        await this.mailService.sendUserWelcome({
-          email: user.email,
-          name: user.firstname,
-        }, magicLinkUrl);
-
-        console.log('[REGISTER] Welcome email sent with magic link to:', user.email);
-      } catch (error) {
-        console.error('Error sending welcome email:', error.message);
-        // Don't fail registration if email fails
-      }
+          return this.mailService.sendUserWelcome({
+            email: user.email,
+            name: user.firstname,
+          }, magicLinkUrl);
+        })
+        .then(() => {
+          console.log('[REGISTER] Welcome email sent with magic link to:', user.email);
+        })
+        .catch(error => {
+          console.error('[REGISTER] Error sending welcome email:', error.message);
+          // Try fallback provider is already handled in mailService
+        });
 
       // Generar tokens
       const tokens = await this.generateTokens(user);

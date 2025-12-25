@@ -10,9 +10,13 @@ async function bootstrap() {
   app.use(json({ limit: '10mb' }));
   app.use(urlencoded({ extended: true, limit: '10mb' }));
 
-  // Enable CORS
+  // Enable CORS - origins from env (comma-separated) or default to localhost
+  const corsOrigins = process.env.CORS_ORIGINS
+    ? process.env.CORS_ORIGINS.split(',').map(o => o.trim())
+    : ['http://localhost:3000'];
+
   app.enableCors({
-    origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
+    origin: corsOrigins,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
   });
