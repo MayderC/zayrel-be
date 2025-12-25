@@ -6,7 +6,45 @@ import {
   IsOptional,
   IsBoolean,
   IsEnum,
+  ValidateNested,
+  IsArray,
 } from 'class-validator';
+import { Type } from 'class-transformer';
+
+// Address DTO for user addresses
+export class AddressDto {
+  @IsOptional()
+  @IsString()
+  label?: string; // e.g., "Casa", "Oficina"
+
+  @IsString()
+  @IsNotEmpty()
+  street: string;
+
+  @IsString()
+  @IsNotEmpty()
+  city: string;
+
+  @IsString()
+  @IsNotEmpty()
+  state: string;
+
+  @IsOptional()
+  @IsString()
+  zipRegion?: string;
+
+  @IsString()
+  @IsNotEmpty()
+  country: string;
+
+  @IsString()
+  @IsNotEmpty()
+  phone: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isDefault?: boolean;
+}
 
 export class CreateUserDto {
   @IsString()
@@ -65,6 +103,24 @@ export class UpdateUserDto {
   @IsOptional()
   @IsEnum(['user', 'admin'])
   role?: string;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => AddressDto)
+  addresses?: AddressDto[];
+}
+
+// Response type for addresses
+export interface AddressResponseDto {
+  label?: string;
+  street: string;
+  city: string;
+  state: string;
+  zipRegion?: string;
+  country: string;
+  phone: string;
+  isDefault: boolean;
 }
 
 export class UserResponseDto {
@@ -76,6 +132,8 @@ export class UserResponseDto {
   isEmailVerified: boolean;
   isBanned: boolean;
   isDeleted: boolean;
+  addresses?: AddressResponseDto[];
   createdAt: Date;
   updatedAt: Date;
 }
+

@@ -54,6 +54,28 @@ export class User {
 export const UserSchema = SchemaFactory.createForClass(User);
 
 // -----------------------------
+// PASSWORD RESET TOKEN
+// -----------------------------
+// Stores tokens for password reset functionality with expiration and usage tracking.
+export type PasswordResetTokenDocument = PasswordResetToken & Document;
+
+@Schema({ timestamps: true, collection: 'password_reset_tokens' })
+export class PasswordResetToken {
+  @Prop({ required: true, type: Types.ObjectId, ref: 'User' })
+  userId: Types.ObjectId;
+
+  @Prop({ required: true, unique: true })
+  token: string; // Hashed token (raw token is sent via email)
+
+  @Prop({ required: true })
+  expiresAt: Date; // 1 hour from creation
+
+  @Prop({ default: false })
+  isUsed: boolean; // true = already used
+}
+export const PasswordResetTokenSchema = SchemaFactory.createForClass(PasswordResetToken);
+
+// -----------------------------
 // COLOR
 // -----------------------------
 // Represents a color with a unique name and hexadecimal value.

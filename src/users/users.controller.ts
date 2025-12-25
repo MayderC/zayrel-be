@@ -13,9 +13,10 @@ import {
   UseGuards,
   Request,
   UnauthorizedException,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
-import { CreateUserDto, UpdateUserDto, UserResponseDto } from './dtos';
+import { CreateUserDto, UpdateUserDto, UserResponseDto, AddressDto, AddressResponseDto } from './dtos';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -73,6 +74,149 @@ export class UsersController {
       stats,
     };
   }
+
+  // =====================
+  // ADDRESS MANAGEMENT (Current User)
+  // =====================
+
+  @UseGuards(JwtAuthGuard)
+  @Get('me/addresses')
+  async getMyAddresses(@Request() req): Promise<{
+    message: string;
+    addresses: AddressResponseDto[];
+  }> {
+    const userId = req.user._id || req.user.userId;
+    const addresses = await this.usersService.getAddresses(userId);
+    return {
+      message: 'Direcciones obtenidas exitosamente',
+      addresses: addresses || [],
+    };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('me/addresses')
+  @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
+  async addMyAddress(@Request() req, @Body() addressDto: AddressDto): Promise<{
+    message: string;
+    addresses: AddressResponseDto[];
+  }> {
+    const userId = req.user._id || req.user.userId;
+    const addresses = await this.usersService.addAddress(userId, addressDto);
+    return {
+      message: 'Dirección agregada exitosamente',
+      addresses: addresses || [],
+    };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('me/addresses/:index')
+  @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
+  async updateMyAddress(
+    @Request() req,
+    @Param('index', ParseIntPipe) index: number,
+    @Body() addressDto: Partial<AddressDto>,
+  ): Promise<{
+    message: string;
+    addresses: AddressResponseDto[];
+  }> {
+    const userId = req.user._id || req.user.userId;
+    const addresses = await this.usersService.updateAddress(userId, index, addressDto);
+    return {
+      message: 'Dirección actualizada exitosamente',
+      addresses: addresses || [],
+    };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('me/addresses/:index')
+  async deleteMyAddress(
+    @Request() req,
+    @Param('index', ParseIntPipe) index: number,
+  ): Promise<{
+    message: string;
+    addresses: AddressResponseDto[];
+  }> {
+    const userId = req.user._id || req.user.userId;
+    const addresses = await this.usersService.deleteAddress(userId, index);
+    return {
+      message: 'Dirección eliminada exitosamente',
+      addresses: addresses || [],
+    };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('me/addresses/:index/default')
+  async setMyDefaultAddress(
+    @Request() req,
+    @Param('index', ParseIntPipe) index: number,
+  ): Promise<{
+    message: string;
+    addresses: AddressResponseDto[];
+  }> {
+    const userId = req.user._id || req.user.userId;
+    const addresses = await this.usersService.setDefaultAddress(userId, index);
+    return {
+      message: 'Dirección principal establecida exitosamente',
+      addresses: addresses || [],
+    };
+  }
+
+  // =====================
+  // ADDRESS MANAGEMENT (Admin for any user)
+  // =====================
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.Admin)
+  @Get(':id/addresses')
+  async getUserAddresses(@Param('id') id: string): Promise<{
+    message: string;
+    addresses: AddressResponseDto[];
+  }> {
+    const addresses = await this.usersService.getAddresses(id);
+    return {
+      message: 'Direcciones obtenidas exitosamente',
+      addresses: addresses || [],
+    };
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.Admin)
+  @Post(':id/addresses')
+  @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
+  async addUserAddress(
+    @Param('id') id: string,
+    @Body() addressDto: AddressDto,
+  ): Promise<{
+    message: string;
+    addresses: AddressResponseDto[];
+  }> {
+    const addresses = await this.usersService.addAddress(id, addressDto);
+    return {
+      message: 'Dirección agregada exitosamente',
+      addresses: addresses || [],
+    };
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.Admin)
+  @Delete(':id/addresses/:index')
+  async deleteUserAddress(
+    @Param('id') id: string,
+    @Param('index', ParseIntPipe) index: number,
+  ): Promise<{
+    message: string;
+    addresses: AddressResponseDto[];
+  }> {
+    const addresses = await this.usersService.deleteAddress(id, index);
+    return {
+      message: 'Dirección eliminada exitosamente',
+      addresses: addresses || [],
+    };
+  }
+
+  // =====================
+  // USER CRUD
+  // =====================
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get(':id')
@@ -165,3 +309,4 @@ export class UsersController {
     };
   }
 }
+

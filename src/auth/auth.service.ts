@@ -6,9 +6,13 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 import * as bcrypt from 'bcryptjs';
+import * as crypto from 'crypto';
 import { UsersService } from '../users/users.service';
 import { MailService } from '../mail/mail.service';
+import { PasswordResetToken, PasswordResetTokenDocument } from '../database/schemas';
 import {
   LoginDto,
   RegisterDto,
@@ -32,6 +36,8 @@ export class AuthService {
     private jwtService: JwtService,
     private configService: ConfigService,
     private mailService: MailService,
+    @InjectModel(PasswordResetToken.name)
+    private passwordResetTokenModel: Model<PasswordResetTokenDocument>,
   ) { }
 
   async register(registerDto: RegisterDto): Promise<AuthResponseDto> {
@@ -146,17 +152,77 @@ export class AuthService {
 
   async forgotPassword(forgotPasswordDto: ForgotPasswordDto): Promise<void> {
     const user = await this.usersService.findByEmail(forgotPasswordDto.email);
+
+    // Always return silently to not reveal if email exists
     if (!user) {
       return;
     }
-    console.log(`Reset password token would be sent to ${forgotPasswordDto.email}`);
+
+    // Delete any existing tokens for this user
+    await this.passwordResetTokenModel.deleteMany({ userId: user._id });
+
+    // Generate a random token
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
+
+    // Save token to database with 1 hour expiration
+    await this.passwordResetTokenModel.create({
+      userId: user._id,
+      token: hashedToken,
+      expiresAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hour from now
+    });
+
+    // Build reset URL
+    const frontendUrl = this.configService.get<string>('FRONTEND_URL', 'http://localhost:3000');
+    const resetUrl = `${frontendUrl}/reset-password?token=${rawToken}`;
+
+    // Log the reset URL (for development - replace with actual email in production)
+    console.log('='.repeat(60));
+    console.log('[PASSWORD RESET] Token generated for:', user.email);
+    console.log('[PASSWORD RESET] Reset URL:', resetUrl);
+    console.log('[PASSWORD RESET] Token expires at:', new Date(Date.now() + 60 * 60 * 1000).toISOString());
+    console.log('='.repeat(60));
+
+    // TODO: Send actual email when SMTP is configured
+    // await this.mailService.sendPasswordReset({
+    //   email: user.email,
+    //   name: user.firstname,
+    //   resetUrl,
+    // });
   }
 
-  resetPassword(resetPasswordDto: ResetPasswordDto): Promise<void> {
-    console.log(resetPasswordDto);
-    throw new BadRequestException(
-      'Funcionalidad de reset de contraseña no implementada completamente',
-    );
+  async resetPassword(resetPasswordDto: ResetPasswordDto): Promise<void> {
+    // Hash the incoming token to compare with database
+    const hashedToken = crypto.createHash('sha256')
+      .update(resetPasswordDto.token)
+      .digest('hex');
+
+    // Find valid token
+    const tokenDoc = await this.passwordResetTokenModel.findOne({
+      token: hashedToken,
+      expiresAt: { $gt: new Date() },
+      isUsed: false,
+    });
+
+    if (!tokenDoc) {
+      throw new BadRequestException('El enlace de restablecimiento es inválido o ha expirado');
+    }
+
+    // Hash new password
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(resetPasswordDto.newPassword, saltRounds);
+
+    // Update user password
+    await this.usersService.update(tokenDoc.userId.toString(), {
+      password: hashedPassword,
+    });
+
+    // Mark token as used
+    await this.passwordResetTokenModel.findByIdAndUpdate(tokenDoc._id, {
+      isUsed: true,
+    });
+
+    console.log('[PASSWORD RESET] Password successfully reset for userId:', tokenDoc.userId.toString());
   }
 
   async refreshToken(refreshToken: string): Promise<{ accessToken: string; refreshToken: string }> {

@@ -186,6 +186,140 @@ export class UsersService {
     };
   }
 
+  // =====================
+  // ADDRESS MANAGEMENT
+  // =====================
+
+  async getAddresses(userId: string): Promise<UserResponseDto['addresses']> {
+    const user = await this.userModel.findOne({ _id: userId, isDeleted: false });
+    if (!user) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+    return user.addresses || [];
+  }
+
+  async addAddress(userId: string, address: {
+    label?: string;
+    street: string;
+    city: string;
+    state: string;
+    zipRegion?: string;
+    country: string;
+    phone: string;
+    isDefault?: boolean;
+  }): Promise<UserResponseDto['addresses']> {
+    const user = await this.userModel.findOne({ _id: userId, isDeleted: false });
+    if (!user) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+
+    // If this is the first address or marked as default, ensure it's the only default
+    const addresses = user.addresses || [];
+    if (address.isDefault || addresses.length === 0) {
+      // Remove default from all other addresses
+      addresses.forEach(addr => addr.isDefault = false);
+      address.isDefault = true;
+    }
+
+    addresses.push({
+      label: address.label || '',
+      street: address.street,
+      city: address.city,
+      state: address.state,
+      zipRegion: address.zipRegion || '',
+      country: address.country,
+      phone: address.phone,
+      isDefault: address.isDefault || false,
+    });
+
+    await this.userModel.findByIdAndUpdate(userId, { addresses });
+    return addresses;
+  }
+
+  async updateAddress(userId: string, addressIndex: number, addressData: {
+    label?: string;
+    street?: string;
+    city?: string;
+    state?: string;
+    zipRegion?: string;
+    country?: string;
+    phone?: string;
+    isDefault?: boolean;
+  }): Promise<UserResponseDto['addresses']> {
+    const user = await this.userModel.findOne({ _id: userId, isDeleted: false });
+    if (!user) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+
+    const addresses = user.addresses || [];
+    if (addressIndex < 0 || addressIndex >= addresses.length) {
+      throw new BadRequestException('Índice de dirección inválido');
+    }
+
+    // Update the address fields
+    const currentAddress = addresses[addressIndex];
+    if (addressData.label !== undefined) currentAddress.label = addressData.label;
+    if (addressData.street !== undefined) currentAddress.street = addressData.street;
+    if (addressData.city !== undefined) currentAddress.city = addressData.city;
+    if (addressData.state !== undefined) currentAddress.state = addressData.state;
+    if (addressData.zipRegion !== undefined) currentAddress.zipRegion = addressData.zipRegion;
+    if (addressData.country !== undefined) currentAddress.country = addressData.country;
+    if (addressData.phone !== undefined) currentAddress.phone = addressData.phone;
+
+    // Handle default flag
+    if (addressData.isDefault) {
+      addresses.forEach((addr, i) => {
+        addr.isDefault = (i === addressIndex);
+      });
+    }
+
+    await this.userModel.findByIdAndUpdate(userId, { addresses });
+    return addresses;
+  }
+
+  async deleteAddress(userId: string, addressIndex: number): Promise<UserResponseDto['addresses']> {
+    const user = await this.userModel.findOne({ _id: userId, isDeleted: false });
+    if (!user) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+
+    const addresses = user.addresses || [];
+    if (addressIndex < 0 || addressIndex >= addresses.length) {
+      throw new BadRequestException('Índice de dirección inválido');
+    }
+
+    const wasDefault = addresses[addressIndex].isDefault;
+    addresses.splice(addressIndex, 1);
+
+    // If deleted address was default and there are remaining addresses, make first one default
+    if (wasDefault && addresses.length > 0) {
+      addresses[0].isDefault = true;
+    }
+
+    await this.userModel.findByIdAndUpdate(userId, { addresses });
+    return addresses;
+  }
+
+  async setDefaultAddress(userId: string, addressIndex: number): Promise<UserResponseDto['addresses']> {
+    const user = await this.userModel.findOne({ _id: userId, isDeleted: false });
+    if (!user) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+
+    const addresses = user.addresses || [];
+    if (addressIndex < 0 || addressIndex >= addresses.length) {
+      throw new BadRequestException('Índice de dirección inválido');
+    }
+
+    // Set all to false, then set the selected one to true
+    addresses.forEach((addr, i) => {
+      addr.isDefault = (i === addressIndex);
+    });
+
+    await this.userModel.findByIdAndUpdate(userId, { addresses });
+    return addresses;
+  }
+
   private toUserResponseDto(user: UserDocument): UserResponseDto {
     return {
       _id: (user._id as Types.ObjectId).toString(),
@@ -196,6 +330,16 @@ export class UsersService {
       isEmailVerified: user.isEmailVerified,
       isBanned: user.isBanned,
       isDeleted: user.isDeleted,
+      addresses: user.addresses?.map(addr => ({
+        label: addr.label,
+        street: addr.street,
+        city: addr.city,
+        state: addr.state,
+        zipRegion: addr.zipRegion,
+        country: addr.country,
+        phone: addr.phone,
+        isDefault: addr.isDefault,
+      })),
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };
