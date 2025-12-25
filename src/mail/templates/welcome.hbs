@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>¡Bienvenido a ZayrelStudio!</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #ffffff;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #fff;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 16px;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .greeting {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .message {
+            color: #555;
+            font-size: 16px;
+            line-height: 1.8;
+            margin-bottom: 30px;
+        }
+
+        .features {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 12px;
+            margin: 25px 0;
+        }
+
+        .feature {
+            display: flex;
+            align-items: center;
+            margin: 15px 0;
+        }
+
+        .feature-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 18px;
+            margin-right: 15px;
+        }
+
+        .feature-text {
+            color: #333;
+            font-size: 15px;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff !important;
+            text-decoration: none;
+            padding: 16px 40px;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 16px;
+            margin: 20px 0;
+        }
+
+        .footer {
+            background: #2d3748;
+            color: #a0aec0;
+            padding: 30px;
+            text-align: center;
+            font-size: 13px;
+        }
+
+        .footer a {
+            color: #667eea;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>¡Bienvenido! 🎉</h1>
+            <p>Tu aventura con ZayrelStudio comienza ahora</p>
+        </div>
+
+        <div class="content">
+            <h2 class="greeting">Hola {{name}},</h2>
+
+            <p class="message">
+                ¡Estamos muy emocionados de tenerte con nosotros! Tu cuenta ha sido creada exitosamente
+                y ya puedes comenzar a explorar todo lo que ZayrelStudio tiene para ofrecerte.
+            </p>
+
+            <div class="features">
+                <div class="feature">
+                    <div class="feature-icon">✨</div>
+                    <span class="feature-text">Diseños exclusivos y únicos</span>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🎨</div>
+                    <span class="feature-text">Personalización a tu medida</span>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🚀</div>
+                    <span class="feature-text">Envío rápido a todo el país</span>
+                </div>
+            </div>
+
+            <div style="text-align: center;">
+                <a href="{{magicLinkUrl}}" class="cta-button">Explorar la Tienda</a>
+            </div>
+
+            <p class="message" style="margin-top: 30px;">
+                Si tienes alguna pregunta, no dudes en contactarnos respondiendo a este correo
+                o a través de nuestras redes sociales.
+            </p>
+
+            <p style="color: #333; font-size: 16px;">
+                ¡Gracias por unirte!<br>
+                <strong>El equipo de ZayrelStudio</strong>
+            </p>
+        </div>
+
+        <div class="footer">
+            <p>© {{year}} {{brandName}}. Todos los derechos reservados.</p>
+            <p style="margin-top: 10px;">
+                <a href="{{instagramUrl}}">Instagram</a> •
+                <a href="{{siteUrl}}">Web</a>
+            </p>
+        </div>
+    </div>
+</body>
+
+</html>

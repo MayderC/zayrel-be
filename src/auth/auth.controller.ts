@@ -7,6 +7,8 @@ import {
   Request,
   HttpCode,
   HttpStatus,
+  Query,
+  BadRequestException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
@@ -85,5 +87,18 @@ export class AuthController {
     // En una implementación real, podrías invalidar el token
     // Por ahora, solo retornamos un mensaje de éxito
     return { message: 'Sesión cerrada exitosamente' };
+  }
+
+  /**
+   * Verify magic link token and auto-login user
+   * GET /auth/magic-link?token=xxx
+   */
+  @Get('magic-link')
+  @HttpCode(HttpStatus.OK)
+  async verifyMagicLink(@Query('token') token: string): Promise<AuthResponseDto> {
+    if (!token) {
+      throw new BadRequestException('Token es requerido');
+    }
+    return this.authService.verifyMagicLink(token);
   }
 }

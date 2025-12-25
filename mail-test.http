@@ -1,0 +1,56 @@
+@api = http://localhost:3001
+
+### ========================================
+### 📧 EMAIL TESTING ENDPOINTS
+### Solo funcionan en modo desarrollo
+### ========================================
+
+### Debug - Ver configuración actual
+GET {{api}}/mail/debug
+
+###
+
+### Test Welcome Email
+# Envía un correo de bienvenida de prueba
+POST {{api}}/mail/test/welcome
+Content-Type: application/json
+
+{
+    "to": "mayder11@gmail.com",
+    "name": "Mayder"
+}
+
+###
+
+### Test Password Reset Email
+# Envía un correo de recuperación de contraseña
+# resetUrl se genera automáticamente desde SITE_URL
+POST {{api}}/mail/test/password-reset
+Content-Type: application/json
+
+{
+    "to": "mayder11@gmail.com",
+    "name": "Mayder"
+}
+
+###
+
+### Test Password Reset Email (URL por defecto)
+# Usa la URL de reset por defecto
+POST {{api}}/mail/test/password-reset
+Content-Type: application/json
+
+{
+    "to": "mayder11@gmail.com",
+    "name": "Mayder"
+}
+
+###
+
+### ========================================
+### 🔗 MAGIC LINK TESTING
+### ========================================
+
+### Verify Magic Link (replace with actual token)
+# Token comes from welcome email or console logs
+GET {{api}}/auth/magic-link?token=YOUR_MAGIC_TOKEN_HERE

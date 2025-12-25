@@ -12,7 +12,7 @@ import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 import { UsersService } from '../users/users.service';
 import { MailService } from '../mail/mail.service';
-import { PasswordResetToken, PasswordResetTokenDocument } from '../database/schemas';
+import { PasswordResetToken, PasswordResetTokenDocument, MagicLinkToken, MagicLinkTokenDocument } from '../database/schemas';
 import {
   LoginDto,
   RegisterDto,
@@ -38,6 +38,8 @@ export class AuthService {
     private mailService: MailService,
     @InjectModel(PasswordResetToken.name)
     private passwordResetTokenModel: Model<PasswordResetTokenDocument>,
+    @InjectModel(MagicLinkToken.name)
+    private magicLinkTokenModel: Model<MagicLinkTokenDocument>,
   ) { }
 
   async register(registerDto: RegisterDto): Promise<AuthResponseDto> {
@@ -45,15 +47,22 @@ export class AuthService {
       // Crear el usuario usando el servicio de usuarios
       const user = await this.usersService.create(registerDto);
 
-      // Enviar correo de bienvenida
-      /* try {
+      // Create magic link for one-click login and send welcome email
+      try {
+        const magicToken = await this.createMagicLinkToken(user._id);
+        const frontendUrl = this.configService.get<string>('FRONTEND_URL', 'http://localhost:3000');
+        const magicLinkUrl = `${frontendUrl}/auth/magic-link?token=${magicToken}`;
+
         await this.mailService.sendUserWelcome({
           email: user.email,
           name: user.firstname,
-        });
+        }, magicLinkUrl);
+
+        console.log('[REGISTER] Welcome email sent with magic link to:', user.email);
       } catch (error) {
-        console.error('Error sending welcome email', error);
-      } */
+        console.error('Error sending welcome email:', error.message);
+        // Don't fail registration if email fails
+      }
 
       // Generar tokens
       const tokens = await this.generateTokens(user);
@@ -77,6 +86,7 @@ export class AuthService {
       throw new BadRequestException('Error al registrar usuario');
     }
   }
+
 
   async login(loginDto: LoginDto): Promise<AuthResponseDto> {
     const user = await this.validateUser(loginDto.email, loginDto.password);
@@ -276,6 +286,89 @@ export class AuthService {
     return {
       accessToken,
       refreshToken,
+    };
+  }
+
+  /**
+   * Create a magic link token for one-click login from welcome email
+   */
+  async createMagicLinkToken(userId: string): Promise<string> {
+    // Delete any existing tokens for this user
+    await this.magicLinkTokenModel.deleteMany({ userId });
+
+    // Generate a random token
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
+
+    // Token expires in 24 hours
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+    // Save to database
+    await this.magicLinkTokenModel.create({
+      userId,
+      token: hashedToken,
+      expiresAt,
+    });
+
+    return rawToken;
+  }
+
+  /**
+   * Verify magic link token and return auth response for auto-login
+   */
+  async verifyMagicLink(token: string): Promise<AuthResponseDto> {
+    // Hash the incoming token
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+    // Find valid, unused token
+    const tokenDoc = await this.magicLinkTokenModel.findOne({
+      token: hashedToken,
+      expiresAt: { $gt: new Date() },
+      isUsed: false,
+    });
+
+    if (!tokenDoc) {
+      throw new BadRequestException('El enlace es inválido o ha expirado');
+    }
+
+    // Get user
+    const user = await this.usersService.findOne(tokenDoc.userId.toString());
+
+    if (!user) {
+      throw new BadRequestException('Usuario no encontrado');
+    }
+
+    if (user.isBanned) {
+      throw new UnauthorizedException('Tu cuenta ha sido suspendida');
+    }
+
+    // Mark token as used (one-time use)
+    await this.magicLinkTokenModel.findByIdAndUpdate(tokenDoc._id, {
+      isUsed: true,
+    });
+
+    // Mark email as verified if not already
+    if (!user.isEmailVerified) {
+      await this.usersService.update(user._id, { isEmailVerified: true });
+      user.isEmailVerified = true;
+    }
+
+    // Generate tokens for the user
+    const tokens = await this.generateTokens(user);
+
+    console.log('[MAGIC LINK] User logged in via magic link:', user.email);
+
+    return {
+      user: {
+        _id: user._id,
+        firstname: user.firstname,
+        lastname: user.lastname,
+        email: user.email,
+        role: user.role,
+        isEmailVerified: user.isEmailVerified,
+      },
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
     };
   }
 }

@@ -36,10 +36,12 @@
     "cloudinary": "^2.8.0",
     "dotenv": "^17.2.0",
     "form-data": "^4.0.5",
+    "handlebars": "^4.7.8",
     "mongoose": "^8.16.3",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "reflect-metadata": "^0.2.2",
+    "resend": "^6.6.0",
     "rxjs": "^7.8.1"
   },
   "devDependencies": {
@@ -52,6 +54,7 @@
     "@swc/core": "^1.10.7",
     "@types/bcryptjs": "^3.0.0",
     "@types/express": "^5.0.0",
+    "@types/handlebars": "^4.1.0",
     "@types/jest": "^29.5.14",
     "@types/multer": "^2.0.0",
     "@types/node": "^22.10.7",

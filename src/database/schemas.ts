@@ -76,6 +76,28 @@ export class PasswordResetToken {
 export const PasswordResetTokenSchema = SchemaFactory.createForClass(PasswordResetToken);
 
 // -----------------------------
+// MAGIC LINK TOKEN
+// -----------------------------
+// Stores tokens for magic link authentication (one-click login from welcome email).
+export type MagicLinkTokenDocument = MagicLinkToken & Document;
+
+@Schema({ timestamps: true, collection: 'magic_link_tokens' })
+export class MagicLinkToken {
+  @Prop({ required: true, type: Types.ObjectId, ref: 'User' })
+  userId: Types.ObjectId;
+
+  @Prop({ required: true, unique: true })
+  token: string; // Hashed token (raw token is sent via email)
+
+  @Prop({ required: true })
+  expiresAt: Date; // 24 hours from creation
+
+  @Prop({ default: false })
+  isUsed: boolean; // true = already used (one-time use)
+}
+export const MagicLinkTokenSchema = SchemaFactory.createForClass(MagicLinkToken);
+
+// -----------------------------
 // COLOR
 // -----------------------------
 // Represents a color with a unique name and hexadecimal value.

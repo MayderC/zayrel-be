@@ -20,7 +20,7 @@ import { ImagesModule } from './images/images.module';
     AuthModule,
     ProductsModule,
     DesignsModule,
-    MailModule,
+    MailModule.forRoot(),
     OrdersModule,
     VirtualTryOnModule,
     ImagesModule,
