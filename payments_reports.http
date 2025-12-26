@@ -1,0 +1,105 @@
+### Variables
+@baseUrl = http://localhost:3001
+@authToken = YOUR_JWT_TOKEN_HERE
+
+###############################################
+# PAYMENTS MODULE
+###############################################
+
+### Initiate Payment - Onvopay
+POST {{baseUrl}}/payments/initiate
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "orderId": "YOUR_ORDER_ID",
+    "method": "onvopay"
+}
+
+### Initiate Payment - PayPal
+POST {{baseUrl}}/payments/initiate
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "orderId": "YOUR_ORDER_ID",
+    "method": "paypal"
+}
+
+### Initiate Payment - Manual
+POST {{baseUrl}}/payments/initiate
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "orderId": "YOUR_ORDER_ID",
+    "method": "manual"
+}
+
+### Webhook - Onvopay (Mock)
+POST {{baseUrl}}/payments/webhook/onvopay
+Content-Type: application/json
+x-signature: mock_signature_here
+
+{
+    "orderId": "YOUR_ORDER_ID",
+    "status": "success",
+    "transactionId": "TXN_12345"
+}
+
+### Webhook - PayPal (Mock)
+POST {{baseUrl}}/payments/webhook/paypal
+Content-Type: application/json
+paypal-auth-algo: HMAC-SHA256
+
+{
+    "orderId": "YOUR_ORDER_ID",
+    "payment_status": "COMPLETED"
+}
+
+
+###############################################
+# REPORTS MODULE
+###############################################
+
+### Get Sales Report
+GET {{baseUrl}}/reports/sales?start=2024-01-01&end=2024-12-31
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+
+###############################################
+# ORDERS MODULE (Existing - For Reference)
+###############################################
+
+### Create Order
+POST {{baseUrl}}/orders
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "items": [
+        {
+            "variantId": "YOUR_VARIANT_ID",
+            "quantity": 1,
+            "unitPrice": 15000
+        }
+    ],
+    "shippingAddress": {
+        "street": "Calle Principal 123",
+        "city": "San José",
+        "state": "San José",
+        "zipRegion": "10101",
+        "country": "Costa Rica",
+        "phone": "88888888"
+    },
+    "orderType": "online"
+}
+
+### Get All Orders
+GET {{baseUrl}}/orders
+Authorization: Bearer {{authToken}}
+
+### Get Order by ID
+GET {{baseUrl}}/orders/YOUR_ORDER_ID
+Authorization: Bearer {{authToken}}

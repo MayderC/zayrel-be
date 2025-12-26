@@ -379,7 +379,7 @@ export class PaymentProof {
   @Prop({ required: false })
   url: string;
 
-  @Prop({ required: false, enum: ['transfer', 'sinpe', 'other'] })
+  @Prop({ required: false, enum: ['transfer', 'sinpe', 'onvopay', 'paypal', 'other'] })
   method: string;
 
   @Prop()

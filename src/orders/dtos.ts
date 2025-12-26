@@ -78,7 +78,7 @@ export class UpdatePaymentProofDto {
     url?: string;
 
     @IsOptional()
-    @IsEnum(['transfer', 'sinpe', 'other'])
+    @IsEnum(['transfer', 'sinpe', 'onvopay', 'paypal', 'other'])
     type?: string;
 
     @IsOptional()

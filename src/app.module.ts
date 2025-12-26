@@ -11,6 +11,8 @@ import { VirtualTryOnModule } from './virtual-try-on/virtual-try-on.module';
 import { ImagesModule } from './images/images.module';
 import { CartModule } from './cart/cart.module';
 import { CouponModule } from './coupon/coupon.module';
+import { PaymentModule } from './payments/payment.module';
+import { ReportsModule } from './reports/reports.module';
 
 @Module({
   imports: [
@@ -28,6 +30,8 @@ import { CouponModule } from './coupon/coupon.module';
     ImagesModule,
     CartModule,
     CouponModule,
+    PaymentModule,
+    ReportsModule,
   ],
   controllers: [],
   providers: [],
