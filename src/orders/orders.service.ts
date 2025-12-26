@@ -120,8 +120,77 @@ export class OrdersService {
         return savedOrder;
     }
 
-    async findAll() {
-        const orders = await this.orderModel.find().populate('user').sort({ createdAt: -1 }).exec();
+    async findAll(options?: {
+        page?: number;
+        limit?: number;
+        search?: string;
+        status?: string;
+    }) {
+        console.log('[findAll] Options received:', options);
+        const { page = 1, limit = 10, search, status } = options || {};
+        const skip = (page - 1) * limit;
+        console.log('[findAll] Using: page=', page, 'limit=', limit, 'search=', search, 'status=', status);
+
+        // Build query
+        const query: any = {};
+
+        // Filter by status (if not 'todas' or empty)
+        if (status && status !== 'todas') {
+            query.status = status;
+        }
+
+        // Search by name, email, or ID
+        if (search && search.trim()) {
+            const searchTerm = search.trim().toLowerCase();
+            const searchConditions: any[] = [
+                { 'guestInfo.name': { $regex: searchTerm, $options: 'i' } },
+                { 'guestInfo.email': { $regex: searchTerm, $options: 'i' } },
+            ];
+
+            // If search term looks like a hex string (potential order ID) with at least 3 chars
+            if (/^[a-fA-F0-9]+$/.test(searchTerm) && searchTerm.length >= 3) {
+                // For full ObjectId match (24 chars)
+                if (searchTerm.length === 24) {
+                    try {
+                        searchConditions.push({ _id: new Types.ObjectId(searchTerm) });
+                    } catch {
+                        // Not a valid ObjectId, ignore
+                    }
+                } else {
+                    // For short ID (3+ chars), find all IDs first and filter 
+                    // Search in the last 6 chars of the ID (the "short ID" shown to users)
+                    // This is a workaround since $where is not allowed in MongoDB Atlas
+                    const allIds = await this.orderModel.find(
+                        status && status !== 'todas' ? { status } : {},
+                        { _id: 1 }
+                    ).lean().exec();
+
+                    const matchingIds = allIds
+                        .filter(doc => {
+                            const shortId = doc._id.toString().slice(-6).toLowerCase();
+                            return shortId.includes(searchTerm);
+                        })
+                        .map(doc => doc._id);
+
+                    if (matchingIds.length > 0) {
+                        searchConditions.push({ _id: { $in: matchingIds } });
+                    }
+                }
+            }
+
+            query.$or = searchConditions;
+        }
+
+        // Execute query with pagination
+        const [orders, total] = await Promise.all([
+            this.orderModel.find(query)
+                .populate('user')
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit)
+                .exec(),
+            this.orderModel.countDocuments(query),
+        ]);
 
         // For each order, fetch its items
         const ordersWithItems = await Promise.all(
@@ -132,13 +201,21 @@ export class OrdersService {
                 }).exec();
 
                 // Calculate total
-                const total = items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
+                const orderTotal = items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
 
-                return { ...order.toObject(), items, total };
+                return { ...order.toObject(), items, total: orderTotal };
             })
         );
 
-        return ordersWithItems;
+        return {
+            orders: ordersWithItems,
+            pagination: {
+                page,
+                limit,
+                total,
+                totalPages: Math.ceil(total / limit),
+            }
+        };
     }
 
     async findMyOrders(userId: string, userEmail?: string) {

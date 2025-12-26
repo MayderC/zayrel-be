@@ -15,7 +15,8 @@ export class ReportsService {
         // For now, we fetch all and filter in memory, assuming low volume, or we rely on OrdersService having a filter method.
         // Since OrdersService.findAll() returns everything, let's assume we can filter manually for MVP or add a method later.
 
-        const allOrders = await this.ordersService.findAll();
+        const result = await this.ordersService.findAll({ limit: 10000 }); // Get all orders (high limit for reports)
+        const allOrders = result.orders;
         const start = new Date(startDate);
         const end = new Date(endDate);
         end.setHours(23, 59, 59, 999); // End of day

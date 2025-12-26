@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, UseGuards, Request, Query } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CreateOrderDto, UpdatePaymentProofDto, UpdateOrderTrackingDto } from './dtos';
@@ -13,8 +13,18 @@ export class OrdersController {
     }
 
     @Get()
-    findAll() {
-        return this.ordersService.findAll();
+    findAll(
+        @Query('page') page?: string,
+        @Query('limit') limit?: string,
+        @Query('search') search?: string,
+        @Query('status') status?: string,
+    ) {
+        return this.ordersService.findAll({
+            page: page ? parseInt(page, 10) : 1,
+            limit: limit ? parseInt(limit, 10) : 10,
+            search,
+            status,
+        });
     }
 
     @UseGuards(JwtAuthGuard)
