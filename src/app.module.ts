@@ -13,6 +13,8 @@ import { CartModule } from './cart/cart.module';
 import { CouponModule } from './coupon/coupon.module';
 import { PaymentModule } from './payments/payment.module';
 import { ReportsModule } from './reports/reports.module';
+import { ScheduledTasksModule } from './scheduled-tasks/scheduled-tasks.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -32,6 +34,8 @@ import { ReportsModule } from './reports/reports.module';
     CouponModule,
     PaymentModule,
     ReportsModule,
+    ScheduledTasksModule,
+    DashboardModule,
   ],
   controllers: [],
   providers: [],

@@ -164,4 +164,287 @@ export class MailService {
 
         await this.sendMail({ to, subject, html });
     }
+
+    // ==================== ORDER & PAYMENT NOTIFICATIONS ====================
+
+    /**
+     * Helper to get customer email from order
+     */
+    private getCustomerEmail(order: any): string | null {
+        return order.guestInfo?.email || order.user?.email || order.shippingAddress?.email || null;
+    }
+
+    /**
+     * Helper to get customer name from order
+     */
+    private getCustomerName(order: any): string {
+        if (order.guestInfo?.name) return order.guestInfo.name;
+        if (order.user?.firstname) return `${order.user.firstname} ${order.user.lastname || ''}`.trim();
+        return 'Cliente';
+    }
+
+    /**
+     * Helper to get readable payment method name
+     */
+    private getPaymentMethodDisplay(method: string): string {
+        const methods: Record<string, string> = {
+            onvopay: 'Tarjeta de Crédito/Débito',
+            paypal: 'PayPal',
+            sinpe: 'SINPE Móvil',
+            transfer: 'Transferencia Bancaria',
+            manual: 'Transferencia / SINPE',
+            other: 'Otro método',
+        };
+        return methods[method] || method;
+    }
+
+    /**
+     * Send order confirmation email when order is created
+     * @param order - The order object with all details
+     */
+    async sendOrderConfirmation(order: any): Promise<void> {
+        const customerEmail = this.getCustomerEmail(order);
+        if (!customerEmail) {
+            this.logger.warn(`Cannot send order confirmation - no email for order ${order._id}`);
+            return;
+        }
+
+        const orderNumber = order._id.toString().slice(-8).toUpperCase();
+        const paymentMethod = order.paymentProof?.method || 'manual';
+
+        // Prepare items with calculated totals
+        const items = (order.items || []).map((item: any) => ({
+            name: item.name || 'Producto',
+            quantity: item.quantity,
+            size: item.size,
+            color: item.color,
+            unitPrice: item.unitPrice,
+            total: item.quantity * item.unitPrice,
+        }));
+
+        const html = this.templateService.render('order-confirmation', {
+            ...this.getCommonTemplateVars(),
+            email: customerEmail,
+            customerName: this.getCustomerName(order),
+            orderNumber,
+            items,
+            subtotal: order.subtotal || order.total,
+            shippingCost: order.shippingCost || 0,
+            freeShipping: (order.shippingCost || 0) === 0,
+            discount: order.discount || 0,
+            total: order.total,
+            paymentMethodDisplay: this.getPaymentMethodDisplay(paymentMethod),
+            shippingAddress: order.shippingAddress || {},
+            isManualPayment: paymentMethod === 'manual' || paymentMethod === 'sinpe' || paymentMethod === 'transfer',
+            orderUrl: `${this.storeUrl}/my-orders`,
+        });
+
+        await this.sendMail({
+            to: customerEmail,
+            subject: `🛍️ Orden #${orderNumber} confirmada - ${this.brandName}`,
+            html,
+        });
+    }
+
+    /**
+     * Send payment approved email
+     * @param order - The order object after payment is verified
+     */
+    async sendPaymentApproved(order: any): Promise<void> {
+        const customerEmail = this.getCustomerEmail(order);
+        if (!customerEmail) {
+            this.logger.warn(`Cannot send payment approved email - no email for order ${order._id}`);
+            return;
+        }
+
+        const orderNumber = order._id.toString().slice(-8).toUpperCase();
+        const paymentMethod = order.paymentProof?.method || 'manual';
+
+        const items = (order.items || []).map((item: any) => ({
+            name: item.productName || item.name || 'Producto',
+            quantity: item.quantity,
+            size: item.size,
+            color: item.color,
+            unitPrice: item.unitPrice,
+            total: item.quantity * item.unitPrice,
+        }));
+
+        const html = this.templateService.render('payment-approved', {
+            ...this.getCommonTemplateVars(),
+            email: customerEmail,
+            customerName: this.getCustomerName(order),
+            orderNumber,
+            total: order.total,
+            paymentMethodDisplay: this.getPaymentMethodDisplay(paymentMethod),
+            transactionId: order.paymentProof?.reference || null,
+            paymentDate: new Date(),
+            items,
+            itemCount: items.length,
+            orderUrl: `${this.storeUrl}/my-orders`,
+        });
+
+        await this.sendMail({
+            to: customerEmail,
+            subject: `✅ Pago aprobado - Orden #${orderNumber} - ${this.brandName}`,
+            html,
+        });
+    }
+
+    /**
+     * Send payment rejected email
+     * @param order - The order object after payment is rejected
+     * @param reason - Optional rejection reason
+     */
+    async sendPaymentRejected(order: any, reason?: string): Promise<void> {
+        const customerEmail = this.getCustomerEmail(order);
+        if (!customerEmail) {
+            this.logger.warn(`Cannot send payment rejected email - no email for order ${order._id}`);
+            return;
+        }
+
+        const orderNumber = order._id.toString().slice(-8).toUpperCase();
+
+        const html = this.templateService.render('payment-rejected', {
+            ...this.getCommonTemplateVars(),
+            email: customerEmail,
+            customerName: this.getCustomerName(order),
+            orderNumber,
+            total: order.total,
+            reason: reason || null,
+            orderUrl: `${this.storeUrl}/my-orders`,
+        });
+
+        await this.sendMail({
+            to: customerEmail,
+            subject: `❌ Comprobante rechazado - Orden #${orderNumber} - ${this.brandName}`,
+            html,
+        });
+    }
+
+    /**
+     * Send payment proof received email (confirmation that we got the proof)
+     * @param order - The order object after payment proof is uploaded
+     */
+    async sendPaymentProofReceived(order: any): Promise<void> {
+        const customerEmail = this.getCustomerEmail(order);
+        if (!customerEmail) {
+            this.logger.warn(`Cannot send payment proof received email - no email for order ${order._id}`);
+            return;
+        }
+
+        const orderNumber = order._id.toString().slice(-8).toUpperCase();
+        const paymentMethod = order.paymentProof?.method || 'manual';
+
+        const items = (order.items || []).map((item: any) => ({
+            name: item.productName || item.name || 'Producto',
+            quantity: item.quantity,
+            size: item.size,
+            color: item.color,
+            unitPrice: item.unitPrice,
+            total: item.quantity * item.unitPrice,
+        }));
+
+        const html = this.templateService.render('payment-proof-received', {
+            ...this.getCommonTemplateVars(),
+            email: customerEmail,
+            customerName: this.getCustomerName(order),
+            orderNumber,
+            items,
+            total: order.total,
+            paymentMethodDisplay: this.getPaymentMethodDisplay(paymentMethod),
+            reference: order.paymentProof?.reference || null,
+            orderUrl: `${this.storeUrl}/my-orders`,
+        });
+
+        await this.sendMail({
+            to: customerEmail,
+            subject: `📋 Comprobante recibido - Orden #${orderNumber} - ${this.brandName}`,
+            html,
+        });
+    }
+
+    /**
+     * Send order in production email
+     */
+    async sendOrderInProduction(order: any): Promise<void> {
+        const customerEmail = this.getCustomerEmail(order);
+        if (!customerEmail) return;
+
+        const orderNumber = order._id.toString().slice(-8).toUpperCase();
+
+        const items = (order.items || []).map((item: any) => ({
+            name: item.productName || item.name || 'Producto',
+            quantity: item.quantity,
+            size: item.size,
+            color: item.color,
+            unitPrice: item.unitPrice,
+            total: item.quantity * item.unitPrice,
+        }));
+
+        const html = this.templateService.render('order-in-production', {
+            ...this.getCommonTemplateVars(),
+            email: customerEmail,
+            customerName: this.getCustomerName(order),
+            orderNumber,
+            items,
+            itemCount: items.length,
+            orderUrl: `${this.storeUrl}/my-orders`,
+        });
+
+        await this.sendMail({
+            to: customerEmail,
+            subject: `🛠️ Tu pedido está en producción - Orden #${orderNumber} - ${this.brandName}`,
+            html,
+        });
+    }
+
+    /**
+     * Send order shipped email
+     */
+    async sendOrderShipped(order: any): Promise<void> {
+        const customerEmail = this.getCustomerEmail(order);
+        if (!customerEmail) return;
+
+        const orderNumber = order._id.toString().slice(-8).toUpperCase();
+
+        const html = this.templateService.render('order-shipped', {
+            ...this.getCommonTemplateVars(),
+            email: customerEmail,
+            customerName: this.getCustomerName(order),
+            orderNumber,
+            trackingNumber: order.trackingNumber,
+            shippingProvider: order.shippingProvider || 'Correos de Costa Rica',
+            orderUrl: `${this.storeUrl}/my-orders`,
+        });
+
+        await this.sendMail({
+            to: customerEmail,
+            subject: `🚀 ¡Tu pedido ha sido enviado! - Orden #${orderNumber} - ${this.brandName}`,
+            html,
+        });
+    }
+
+    /**
+     * Send order completed email
+     */
+    async sendOrderCompleted(order: any): Promise<void> {
+        const customerEmail = this.getCustomerEmail(order);
+        if (!customerEmail) return;
+
+        const orderNumber = order._id.toString().slice(-8).toUpperCase();
+
+        const html = this.templateService.render('order-completed', {
+            ...this.getCommonTemplateVars(),
+            email: customerEmail,
+            customerName: this.getCustomerName(order),
+            orderNumber,
+            storeUrl: this.storeUrl,
+        });
+
+        await this.sendMail({
+            to: customerEmail,
+            subject: `📦 Pedido entregado - Orden #${orderNumber} - ${this.brandName}`,
+            html,
+        });
+    }
 }

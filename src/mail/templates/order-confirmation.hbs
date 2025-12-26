@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirmación de Orden - ZayrelStudio</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #ffffff;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #fff;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 16px;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .greeting {
+            font-size: 22px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .message {
+            color: #555;
+            font-size: 16px;
+            line-height: 1.8;
+            margin-bottom: 25px;
+        }
+
+        .order-number {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .order-number p {
+            color: #333;
+            font-size: 14px;
+        }
+
+        .order-number .number {
+            font-size: 24px;
+            font-weight: 700;
+            color: #667eea;
+            font-family: monospace;
+        }
+
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+        }
+
+        .items-table th {
+            background: #f8f9fa;
+            padding: 12px;
+            text-align: left;
+            font-size: 13px;
+            color: #666;
+            text-transform: uppercase;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .items-table td {
+            padding: 15px 12px;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .item-name {
+            font-weight: 600;
+        }
+
+        .item-details {
+            color: #666;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
+        .totals {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 25px 0;
+        }
+
+        .totals-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            font-size: 14px;
+            color: #555;
+        }
+
+        .totals-row.total {
+            border-top: 2px solid #e2e8f0;
+            margin-top: 10px;
+            padding-top: 15px;
+            font-size: 18px;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .payment-method {
+            background: #e8f4fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .payment-method p {
+            color: #1565c0;
+            font-size: 14px;
+        }
+
+        .shipping-address {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .shipping-address h3 {
+            color: #333;
+            font-size: 14px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .shipping-address p {
+            color: #555;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff !important;
+            text-decoration: none;
+            padding: 16px 40px;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 16px;
+            margin: 20px 0;
+        }
+
+        .next-steps {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px 20px;
+            margin: 25px 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .next-steps p {
+            color: #856404;
+            font-size: 14px;
+        }
+
+        .footer {
+            background: #2d3748;
+            color: #a0aec0;
+            padding: 30px;
+            text-align: center;
+            font-size: 13px;
+        }
+
+        .footer a {
+            color: #667eea;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛍️ ¡Orden Confirmada!</h1>
+            <p>Gracias por tu compra en ZayrelStudio</p>
+        </div>
+
+        <div class="content">
+            <h2 class="greeting">Hola {{customerName}},</h2>
+
+            <p class="message">
+                Hemos recibido tu orden correctamente. A continuación encontrarás los detalles de tu pedido.
+            </p>
+
+            <div class="order-number">
+                <p>Número de Orden</p>
+                <span class="number">#{{orderNumber}}</span>
+            </div>
+
+            <table class="items-table">
+                <thead>
+                    <tr>
+                        <th>Producto</th>
+                        <th style="text-align: center;">Cant.</th>
+                        <th style="text-align: right;">Precio</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each items}}
+                    <tr>
+                        <td>
+                            <div class="item-name">{{this.name}}</div>
+                            {{#if this.size}}
+                            <div class="item-details">{{this.color}} / {{this.size}}</div>
+                            {{/if}}
+                        </td>
+                        <td style="text-align: center;">{{this.quantity}}</td>
+                        <td style="text-align: right;">{{currency this.total}}</td>
+                    </tr>
+                    {{/each}}
+                </tbody>
+            </table>
+
+            <div class="totals">
+                <div class="totals-row">
+                    <span>Subtotal</span>
+                    <span>{{currency subtotal}}</span>
+                </div>
+                <div class="totals-row">
+                    <span>Envío</span>
+                    <span>{{#if freeShipping}}GRATIS{{else}}{{currency shippingCost}}{{/if}}</span>
+                </div>
+                {{#if discount}}
+                <div class="totals-row" style="color: #22c55e;">
+                    <span>Descuento</span>
+                    <span>-{{currency discount}}</span>
+                </div>
+                {{/if}}
+                <div class="totals-row total">
+                    <span>Total</span>
+                    <span>{{currency total}}</span>
+                </div>
+            </div>
+
+            <div class="payment-method">
+                <p>💳 <strong>Método de pago:</strong> {{paymentMethodDisplay}}</p>
+            </div>
+
+            <div class="shipping-address">
+                <h3>📍 Dirección de Envío</h3>
+                <p>
+                    {{shippingAddress.street}}<br>
+                    {{shippingAddress.city}}, {{shippingAddress.state}}<br>
+                    {{shippingAddress.country}}<br>
+                    Tel: {{shippingAddress.phone}}
+                </p>
+            </div>
+
+            {{#if isManualPayment}}
+            <div class="next-steps">
+                <p>⏳ <strong>Próximo paso:</strong> Realiza tu transferencia o SINPE y sube el comprobante en "Mis Órdenes" para que podamos verificar tu pago.</p>
+            </div>
+            {{else}}
+            <div class="next-steps">
+                <p>⏳ <strong>Estado:</strong> Estamos procesando tu pago. Te notificaremos cuando sea confirmado.</p>
+            </div>
+            {{/if}}
+
+            <div style="text-align: center; margin-top: 30px;">
+                <a href="{{orderUrl}}" class="cta-button">Ver mi Orden</a>
+            </div>
+
+            <p style="color: #333; font-size: 16px; margin-top: 30px;">
+                ¡Gracias por confiar en nosotros!<br>
+                <strong>El equipo de {{brandName}}</strong>
+            </p>
+        </div>
+
+        <div class="footer">
+            <p>© {{year}} {{brandName}}. Todos los derechos reservados.</p>
+            <p style="margin-top: 10px;">
+                <a href="{{instagramUrl}}">Instagram</a> •
+                <a href="{{siteUrl}}">Web</a>
+            </p>
+            <p style="margin-top: 15px; font-size: 11px;">
+                Este correo fue enviado a {{email}} porque realizaste una compra.
+            </p>
+        </div>
+    </div>
+</body>
+
+</html>

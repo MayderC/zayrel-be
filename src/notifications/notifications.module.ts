@@ -1,17 +1,15 @@
 import { Module } from '@nestjs/common';
 import { NotificationsService } from './notifications.service';
+import { MailModule } from '../mail/mail.module';
 
 /**
- * Notifications Module (STUB)
+ * Notifications Module
  * 
- * Export NotificationsService for use in other modules (e.g., OrdersModule)
- * 
- * To activate:
- * 1. Uncomment the methods in notifications.service.ts
- * 2. Import this module in app.module.ts
- * 3. Inject NotificationsService in OrdersService
+ * Handles all customer-facing notifications for order and payment events.
+ * Uses MailService for email delivery.
  */
 @Module({
+    imports: [MailModule],
     providers: [NotificationsService],
     exports: [NotificationsService],
 })

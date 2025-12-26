@@ -188,19 +188,18 @@ export class AuthService {
     const frontendUrl = this.configService.get<string>('FRONTEND_URL', 'http://localhost:3000');
     const resetUrl = `${frontendUrl}/reset-password?token=${rawToken}`;
 
-    // Log the reset URL (for development - replace with actual email in production)
-    console.log('='.repeat(60));
-    console.log('[PASSWORD RESET] Token generated for:', user.email);
-    console.log('[PASSWORD RESET] Reset URL:', resetUrl);
-    console.log('[PASSWORD RESET] Token expires at:', new Date(Date.now() + 60 * 60 * 1000).toISOString());
-    console.log('='.repeat(60));
-
-    // TODO: Send actual email when SMTP is configured
-    // await this.mailService.sendPasswordReset({
-    //   email: user.email,
-    //   name: user.firstname,
-    //   resetUrl,
-    // });
+    // Send password reset email
+    try {
+      await this.mailService.sendPasswordReset({
+        email: user.email,
+        name: user.firstname,
+      }, resetUrl);
+      console.log('[PASSWORD RESET] Email sent to:', user.email);
+    } catch (error) {
+      console.error('[PASSWORD RESET] Failed to send email:', error.message);
+      // Still log URL for debugging in case email fails
+      console.log('[PASSWORD RESET] Reset URL:', resetUrl);
+    }
   }
 
   async resetPassword(resetPasswordDto: ResetPasswordDto): Promise<void> {

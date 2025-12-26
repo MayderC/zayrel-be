@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Body, Patch, Param, UseGuards, Request } from '@nestjs/common';
 import { OrdersService } from './orders.service';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CreateOrderDto, UpdatePaymentProofDto, UpdateOrderTrackingDto } from './dtos';
 
 @Controller('orders')
@@ -14,6 +15,13 @@ export class OrdersController {
     @Get()
     findAll() {
         return this.ordersService.findAll();
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Get('mine')
+    getMyOrders(@Request() req) {
+        // Pass both userId and email so we can find orders by user OR by guestInfo.email
+        return this.ordersService.findMyOrders(req.user._id, req.user.email);
     }
 
     @Get(':id')

@@ -57,6 +57,24 @@ $ pnpm run test:e2e
 $ pnpm run test:cov
 ```
 
+## Development Best Practices
+
+### MongoDB/Mongoose Queries
+
+When querying by ObjectId fields (like `user`, `_id`, or any reference field), **always convert string IDs to `Types.ObjectId`** when using complex queries (`$or`, `$and`, etc.):
+
+```typescript
+import { Types } from 'mongoose';
+
+// ❌ Bad - string comparison may fail in $or queries
+const query = { $or: [{ user: userId }, { 'guestInfo.email': email }] };
+
+// ✅ Good - explicit ObjectId conversion
+const query = { $or: [{ user: new Types.ObjectId(userId) }, { 'guestInfo.email': email }] };
+```
+
+> **Note:** Mongoose usually handles string-to-ObjectId conversion automatically for simple queries, but complex queries with `$or`/`$and` may require explicit conversion.
+
 ## Deployment
 
 When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.

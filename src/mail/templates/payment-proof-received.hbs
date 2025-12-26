@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comprobante Recibido - ZayrelStudio</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #ffffff;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #fff;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 16px;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .greeting {
+            font-size: 22px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .message {
+            color: #555;
+            font-size: 16px;
+            line-height: 1.8;
+            margin-bottom: 25px;
+        }
+
+        .status-box {
+            background: #f0f9ff;
+            border-left: 4px solid #3b82f6;
+            padding: 20px;
+            border-radius: 4px;
+            margin: 25px 0;
+        }
+
+        .status-box h3 {
+            color: #1d4ed8;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 18px;
+        }
+
+        .status-box p {
+            color: #374151;
+            font-size: 14px;
+            margin: 0;
+        }
+
+        /* Detail Table Styles */
+        .order-info {
+            background: #f8f9fa;
+            border-radius: 12px;
+            margin: 25px 0;
+            overflow: hidden;
+        }
+
+        .details-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .details-table td {
+            padding: 12px 20px;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 14px;
+        }
+
+        .details-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .label-col {
+            color: #666;
+            width: 40%;
+        }
+
+        .value-col {
+            color: #333;
+            font-weight: 500;
+            text-align: right;
+            width: 60%;
+        }
+
+        /* Product Table */
+        .products-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 5px 0;
+        }
+
+        .products-table td {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .products-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Timeline Styles */
+        .timeline {
+            margin: 30px 20px;
+        }
+
+        .timeline-item {
+            display: flex;
+            align-items: flex-start;
+            position: relative;
+            padding-bottom: 30px;
+        }
+
+        .timeline-item:last-child {
+            padding-bottom: 0;
+        }
+
+        /* Vertical Line */
+        .timeline-item::after {
+            content: '';
+            position: absolute;
+            left: 12px;
+            top: 28px;
+            bottom: 0;
+            width: 2px;
+            background: #e2e8f0;
+            z-index: 0;
+        }
+
+        .timeline-item:last-child::after {
+            display: none;
+        }
+
+        .timeline-dot {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            margin-right: 20px;
+            flex-shrink: 0;
+            z-index: 1;
+            position: relative;
+            background: #fff;
+        }
+
+        .timeline-dot.done {
+            background: #22c55e;
+            color: white;
+            border: 2px solid #22c55e;
+            font-weight: bold;
+        }
+
+        .timeline-dot.current {
+            background: #3b82f6;
+            color: white;
+            border: 2px solid #3b82f6;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+            animation: pulse 2s infinite;
+        }
+
+        .timeline-dot.pending {
+            background: #fff;
+            color: #cbd5e0;
+            border: 2px solid #cbd5e0;
+            font-size: 12px;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
+            }
+
+            50% {
+                box-shadow: 0 0 0 8px rgba(59, 130, 246, 0);
+            }
+        }
+
+        .timeline-content h4 {
+            color: #333;
+            font-size: 15px;
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
+
+        .timeline-content p {
+            color: #666;
+            font-size: 12px;
+            margin: 0;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: #fff !important;
+            text-decoration: none;
+            padding: 15px 40px;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 16px;
+            margin: 20px 0;
+        }
+
+        .footer {
+            background: #2d3748;
+            color: #a0aec0;
+            padding: 30px;
+            text-align: center;
+            font-size: 13px;
+        }
+
+        .footer a {
+            color: #3b82f6;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📋 Comprobante Recibido</h1>
+            <p>Estamos verificando tu pago</p>
+        </div>
+
+        <div class="content">
+            <h2 class="greeting">Hola {{customerName}},</h2>
+
+            <p class="message">
+                Hemos recibido correctamente tu comprobante de pago para la orden <strong>#{{orderNumber}}</strong>.
+                Nuestro equipo lo revisará en las próximas horas.
+            </p>
+
+            <div class="status-box">
+                <h3>🔍 En Revisión</h3>
+                <p>Tu comprobante está siendo verificado. Te notificaremos por email cuando confirmemos el pago.</p>
+            </div>
+
+            <div class="order-info">
+                <table class="details-table" cellpadding="0" cellspacing="0">
+                    <tr>
+                        <td class="label-col">Número de orden</td>
+                        <td class="value-col">#{{orderNumber}}</td>
+                    </tr>
+                    <tr>
+                        <td class="label-col">Método de pago</td>
+                        <td class="value-col">{{paymentMethodDisplay}}</td>
+                    </tr>
+                    {{#if reference}}
+                    <tr>
+                        <td class="label-col">Referencia</td>
+                        <td class="value-col">{{reference}}</td>
+                    </tr>
+                    {{/if}}
+                    <!-- Products -->
+                    <tr>
+                        <td colspan="2" style="padding: 0 20px;">
+                            <div
+                                style="margin: 5px 0; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0;">
+                                <p
+                                    style="margin: 15px 0 5px 0; font-size: 11px; color: #888; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">
+                                    Detalle de productos</p>
+                                <table class="products-table">
+                                    {{#each items}}
+                                    <tr>
+                                        <td width="70%" style="vertical-align: top;">
+                                            <div style="font-weight: 600; color: #444; font-size: 14px;">{{name}}</div>
+                                            {{#if size}}
+                                            <div style="font-size: 12px; color: #888; margin-top: 2px;">
+                                                Talla: {{size}} {{#if color}}| Color: {{color}}{{/if}}
+                                            </div>
+                                            {{/if}}
+                                            <div style="font-size: 12px; color: #888; margin-top: 2px;">
+                                                {{quantity}} x {{currency unitPrice}}
+                                            </div>
+                                        </td>
+                                        <td width="30%"
+                                            style="text-align: right; vertical-align: top; font-weight: 500; color: #333;">
+                                            {{currency total}}
+                                        </td>
+                                    </tr>
+                                    {{/each}}
+                                </table>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="label-col" style="font-weight: 600;">Total</td>
+                        <td class="value-col" style="font-size: 16px; color: #333;">{{currency total}}</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-dot done">✓</div>
+                    <div class="timeline-content">
+                        <h4>Orden creada</h4>
+                        <p>Tu pedido fue registrado</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-dot done">✓</div>
+                    <div class="timeline-content">
+                        <h4>Comprobante recibido</h4>
+                        <p>Adjuntaste tu comprobante de pago</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-dot current">⏳</div>
+                    <div class="timeline-content">
+                        <h4>Verificación en proceso</h4>
+                        <p>Estamos revisando tu pago</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-dot pending">4</div>
+                    <div class="timeline-content">
+                        <h4>Pago confirmado</h4>
+                        <p>Próximo paso</p>
+                    </div>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin-top: 30px;">
+                <a href="{{orderUrl}}" class="cta-button">Ver Mi Orden</a>
+            </div>
+
+            <p style="color: #333; font-size: 16px; margin-top: 30px;">
+                Si tienes preguntas, responde a este correo o contáctanos por Instagram.<br>
+                <strong>El equipo de {{brandName}}</strong>
+            </p>
+        </div>
+
+        <div class="footer">
+            <p>© {{year}} {{brandName}}. Todos los derechos reservados.</p>
+            <p style="margin-top: 10px;">
+                <a href="{{instagramUrl}}">Instagram</a> •
+                <a href="{{siteUrl}}">Web</a>
+            </p>
+        </div>
+    </div>
+</body>
+
+</html>

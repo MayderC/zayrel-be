@@ -1,10 +1,11 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { OrdersController } from './orders.controller';
 import { OrdersService } from './orders.service';
 import { Order, OrderSchema, OrderItem, OrderItemSchema, Variant, VariantSchema, Product, ProductSchema, User, UserSchema } from '../database/schemas';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { StorageModule } from '../storage/storage.module';
+import { DashboardModule } from '../dashboard/dashboard.module';
 
 @Module({
     imports: [
@@ -17,6 +18,7 @@ import { StorageModule } from '../storage/storage.module';
         ]),
         NotificationsModule,
         StorageModule,
+        forwardRef(() => DashboardModule),
     ],
     controllers: [OrdersController],
     providers: [OrdersService],

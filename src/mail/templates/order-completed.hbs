@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>¡Pedido Entregado! - ZayrelStudio</title>
+    <style>
+        /* Reusing consistent styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #ffffff;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #fff;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 16px;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .greeting {
+            font-size: 22px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .message {
+            color: #555;
+            font-size: 16px;
+            line-height: 1.8;
+            margin-bottom: 25px;
+        }
+
+        .success-box {
+            background: #ecfdf5;
+            border-left: 4px solid #059669;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 4px;
+        }
+
+        .success-box p {
+            color: #065f46;
+            font-size: 14px;
+        }
+
+        .status-timeline {
+            margin: 30px 20px;
+        }
+
+        .timeline-item {
+            display: flex;
+            align-items: flex-start;
+            position: relative;
+            padding-bottom: 30px;
+        }
+
+        .timeline-item:last-child {
+            padding-bottom: 0;
+        }
+
+        .timeline-item::after {
+            content: '';
+            position: absolute;
+            left: 12px;
+            top: 28px;
+            bottom: 0;
+            width: 2px;
+            background: #e2e8f0;
+            z-index: 0;
+        }
+
+        .timeline-item:last-child::after {
+            display: none;
+        }
+
+        .timeline-dot {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            margin-right: 20px;
+            flex-shrink: 0;
+            z-index: 1;
+            position: relative;
+            background: #fff;
+        }
+
+        .timeline-dot.completed {
+            background: #22c55e;
+            color: #fff;
+            border: 2px solid #22c55e;
+            font-weight: bold;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            color: #fff !important;
+            text-decoration: none;
+            padding: 16px 40px;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 16px;
+            margin: 20px 0;
+        }
+
+        .info-box {
+            background: #fef3c7;
+            border-left: 4px solid #d97706;
+            padding: 15px 20px;
+            margin: 25px 0;
+            border-radius: 4px;
+        }
+
+        .footer {
+            background: #2d3748;
+            color: #a0aec0;
+            padding: 30px;
+            text-align: center;
+            font-size: 13px;
+        }
+
+        .footer a {
+            color: #3b82f6;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>✅ ¡Pedido Entregado!</h1>
+            <p>Esperamos que te encante</p>
+        </div>
+
+        <div class="content">
+            <h2 class="greeting">Hola {{customerName}},</h2>
+
+            <p class="message">
+                Hemos confirmado que tu pedido ha sido entregado. Muchas gracias por tu compra.
+                Esperamos que disfrutes tus productos tanto como nosotros disfrutamos creándolos.
+            </p>
+
+            <div class="success-box">
+                <p>🎁 <strong>Orden #{{orderNumber}}</strong> - Completada con éxito</p>
+            </div>
+
+            <div class="status-timeline">
+                <div class="timeline-item">
+                    <div class="timeline-dot completed">✓</div>
+                    <div class="timeline-content">
+                        <h4>Pago confirmado</h4>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-dot completed">✓</div>
+                    <div class="timeline-content">
+                        <h4>En producción</h4>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-dot completed">✓</div>
+                    <div class="timeline-content">
+                        <h4>Enviado</h4>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-dot completed">✓</div>
+                    <div class="timeline-content">
+                        <h4>Entregado</h4>
+                        <p>¡Disfrútalo!</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-box">
+                <p>💎 <strong>Bonus:</strong> Has ganado <strong>+5 tokens VTO</strong> (Probador Virtual) por esta
+                    compra. ¡Úsalos en nuestra tienda!</p>
+            </div>
+
+            <div style="text-align: center; margin-top: 30px;">
+                <a href="{{storeUrl}}" class="cta-button">Ir a la Tienda</a>
+            </div>
+
+            <p style="color: #333; font-size: 16px; margin-top: 30px;">
+                ¡Hasta la próxima!<br>
+                <strong>El equipo de {{brandName}}</strong>
+            </p>
+        </div>
+
+        <div class="footer">
+            <p>© {{year}} {{brandName}}. Todos los derechos reservados.</p>
+            <p style="margin-top: 10px;">
+                <a href="{{instagramUrl}}">Instagram</a> •
+                <a href="{{siteUrl}}">Web</a>
+            </p>
+        </div>
+    </div>
+</body>
+
+</html>

@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>En Producción - ZayrelStudio</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #ffffff;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #fff;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 16px;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .greeting {
+            font-size: 22px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .message {
+            color: #555;
+            font-size: 16px;
+            line-height: 1.8;
+            margin-bottom: 25px;
+        }
+
+        .success-box {
+            background: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 4px;
+        }
+
+        .success-box p {
+            color: #1e40af;
+            font-size: 14px;
+        }
+
+        /* Table Styles */
+        .details-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #f8f9fa;
+            border-radius: 12px;
+            margin: 25px 0;
+            overflow: hidden;
+        }
+
+        .details-table td {
+            padding: 12px 20px;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 14px;
+        }
+
+        .details-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .label-col {
+            color: #666;
+            width: 40%;
+        }
+
+        .value-col {
+            color: #333;
+            font-weight: 600;
+            text-align: right;
+            width: 60%;
+        }
+
+        /* Product Table */
+        .products-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+
+        .products-table td {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .products-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Timeline Styles */
+        .status-timeline {
+            margin: 30px 20px;
+        }
+
+        .timeline-item {
+            display: flex;
+            align-items: flex-start;
+            position: relative;
+            padding-bottom: 30px;
+        }
+
+        .timeline-item:last-child {
+            padding-bottom: 0;
+        }
+
+        .timeline-item::after {
+            content: '';
+            position: absolute;
+            left: 12px;
+            top: 28px;
+            bottom: 0;
+            width: 2px;
+            background: #e2e8f0;
+            z-index: 0;
+        }
+
+        .timeline-item:last-child::after {
+            display: none;
+        }
+
+        .timeline-dot {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            margin-right: 20px;
+            flex-shrink: 0;
+            z-index: 1;
+            position: relative;
+            background: #fff;
+        }
+
+        .timeline-dot.completed {
+            background: #22c55e;
+            color: #fff;
+            border: 2px solid #22c55e;
+            font-weight: bold;
+        }
+
+        .timeline-dot.current {
+            background: #3b82f6;
+            color: #fff;
+            border: 2px solid #3b82f6;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+        }
+
+        .timeline-dot.pending {
+            background: #fff;
+            color: #fff;
+            border: 2px solid #cbd5e0;
+        }
+
+        .timeline-content h4 {
+            color: #333;
+            font-size: 15px;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .timeline-content p {
+            color: #666;
+            font-size: 13px;
+            margin: 0;
+            line-height: 1.4;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: #fff !important;
+            text-decoration: none;
+            padding: 16px 40px;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 16px;
+            margin: 20px 0;
+        }
+
+        .info-box {
+            background: #e8f4fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px 20px;
+            margin: 25px 0;
+            border-radius: 4px;
+        }
+
+        .info-box p {
+            color: #1565c0;
+            font-size: 14px;
+        }
+
+        .footer {
+            background: #2d3748;
+            color: #a0aec0;
+            padding: 30px;
+            text-align: center;
+            font-size: 13px;
+        }
+
+        .footer a {
+            color: #3b82f6;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛠️ En Producción</h1>
+            <p>Tu pedido está siendo confeccionado</p>
+        </div>
+
+        <div class="content">
+            <h2 class="greeting">Hola {{customerName}},</h2>
+
+            <p class="message">
+                Queríamos contarte que <strong>hemos comenzado a trabajar en tu pedido</strong>. Nuestros artesanos ya
+                están
+                preparando cada detalle con el cuidado que mereces.
+            </p>
+
+            <div class="success-box">
+                <p>✨ <strong>Orden #{{orderNumber}}</strong> - En producción desde ahora</p>
+            </div>
+
+            <!-- Product Summary (Simplified) -->
+            <table class="details-table" cellpadding="0" cellspacing="0">
+                <tr>
+                    <td class="label-col">Productos</td>
+                    <td class="value-col">{{itemCount}} artículo(s)</td>
+                </tr>
+                <tr>
+                    <td colspan="2" style="padding: 0 20px;">
+                        <div style="margin: 10px 0; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0;">
+                            <p
+                                style="margin: 15px 0 5px 0; font-size: 11px; color: #888; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">
+                                Resumen</p>
+                            <table class="products-table">
+                                {{#each items}}
+                                <tr>
+                                    <td width="70%" style="vertical-align: top;">
+                                        <div style="font-weight: 600; color: #444; font-size: 14px;">{{name}}</div>
+                                        <div style="font-size: 12px; color: #888;">{{quantity}} unidad(es)</div>
+                                    </td>
+                                </tr>
+                                {{/each}}
+                            </table>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+
+            <h3 style="color: #333; font-size: 16px; margin-bottom: 20px; text-align: center;">📦 Progreso del pedido
+            </h3>
+
+            <div class="status-timeline">
+                <div class="timeline-item">
+                    <div class="timeline-dot completed">✓</div>
+                    <div class="timeline-content">
+                        <h4>Pago confirmado</h4>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-dot current">●</div>
+                    <div class="timeline-content">
+                        <h4>En producción</h4>
+                        <p>Trabajando en tu pedido</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-dot pending"></div>
+                    <div class="timeline-content">
+                        <h4>Enviado</h4>
+                        <p>Pendiente de envío</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-box">
+                <p>⏳ Típicamente los pedidos tardan 3-5 días hábiles en estar listos para envío. Te notificaremos apenas
+                    salga.</p>
+            </div>
+
+            <div style="text-align: center; margin-top: 30px;">
+                <a href="{{orderUrl}}" class="cta-button">Ver Mi Pedido</a>
+            </div>
+
+            <p style="color: #333; font-size: 16px; margin-top: 30px;">
+                ¡Gracias por tu paciencia!<br>
+                <strong>El equipo de {{brandName}}</strong>
+            </p>
+        </div>
+
+        <div class="footer">
+            <p>© {{year}} {{brandName}}. Todos los derechos reservados.</p>
+            <p style="margin-top: 10px;">
+                <a href="{{instagramUrl}}">Instagram</a> •
+                <a href="{{siteUrl}}">Web</a>
+            </p>
+        </div>
+    </div>
+</body>
+
+</html>

@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>¡Olvidaste algo! - ZayrelStudio</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #ffffff;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #fff;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 16px;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .greeting {
+            font-size: 22px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .message {
+            color: #555;
+            font-size: 16px;
+            line-height: 1.8;
+            margin-bottom: 25px;
+        }
+
+        .cart-items {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 25px 0;
+        }
+
+        .cart-item {
+            display: flex;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .cart-item:last-child {
+            border-bottom: none;
+        }
+
+        .item-image {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            object-fit: cover;
+            margin-right: 15px;
+            background: #e2e8f0;
+        }
+
+        .item-details {
+            flex: 1;
+        }
+
+        .item-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .item-variant {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .item-price {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .cart-total {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 2px solid #e2e8f0;
+            font-size: 18px;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .coupon-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 25px;
+            margin: 25px 0;
+            text-align: center;
+            color: #fff;
+        }
+
+        .coupon-box h3 {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        .coupon-code {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px dashed rgba(255, 255, 255, 0.5);
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            margin: 10px 0;
+        }
+
+        .coupon-box p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: #fff !important;
+            text-decoration: none;
+            padding: 18px 50px;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 18px;
+            margin: 20px 0;
+        }
+
+        .urgency-text {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 15px 20px;
+            margin: 25px 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .urgency-text p {
+            color: #92400e;
+            font-size: 14px;
+        }
+
+        .footer {
+            background: #2d3748;
+            color: #a0aec0;
+            padding: 30px;
+            text-align: center;
+            font-size: 13px;
+        }
+
+        .footer a {
+            color: #667eea;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛒 ¡Tu carrito te extraña!</h1>
+            <p>Dejaste artículos esperándote</p>
+        </div>
+
+        <div class="content">
+            <h2 class="greeting">Hola {{customerName}},</h2>
+
+            <p class="message">
+                Notamos que dejaste algunos productos increíbles en tu carrito.
+                ¡No dejes que se escapen! Tus artículos favoritos todavía están disponibles.
+            </p>
+
+            <div class="cart-items">
+                {{#each items}}
+                <div class="cart-item">
+                    {{#if this.image}}
+                    <img src="{{this.image}}" alt="{{this.name}}" class="item-image">
+                    {{else}}
+                    <div class="item-image"></div>
+                    {{/if}}
+                    <div class="item-details">
+                        <div class="item-name">{{this.name}}</div>
+                        <div class="item-variant">{{this.color}} / {{this.size}} x {{this.quantity}}</div>
+                    </div>
+                    <div class="item-price">{{currency this.total}}</div>
+                </div>
+                {{/each}}
+
+                <div class="cart-total">
+                    <span>Total en tu carrito</span>
+                    <span>{{currency total}}</span>
+                </div>
+            </div>
+
+            <div class="coupon-box">
+                <h3>🎁 ¡Tenemos un regalo para ti!</h3>
+                <div class="coupon-code">{{couponCode}}</div>
+                <p>Usa este código para obtener {{couponDiscount}} de descuento en tu compra</p>
+            </div>
+
+            <div class="urgency-text">
+                <p>⏰ <strong>Stock limitado:</strong> Los artículos en tu carrito son muy populares y podrían agotarse
+                    pronto.</p>
+            </div>
+
+            <div style="text-align: center; margin-top: 30px;">
+                <a href="{{storeUrl}}" class="cta-button">Completar mi Compra</a>
+            </div>
+
+            <p style="color: #333; font-size: 16px; margin-top: 30px;">
+                ¿Tienes preguntas? Estamos aquí para ayudarte.<br>
+                <strong>El equipo de {{brandName}}</strong>
+            </p>
+        </div>
+
+        <div class="footer">
+            <p>© {{year}} {{brandName}}. Todos los derechos reservados.</p>
+            <p style="margin-top: 10px;">
+                <a href="{{instagramUrl}}">Instagram</a> •
+                <a href="{{siteUrl}}">Web</a>
+            </p>
+            <p style="margin-top: 15px; font-size: 11px;">
+                Este correo fue enviado a {{email}} porque tienes artículos en tu carrito.
+            </p>
+        </div>
+    </div>
+</body>
+
+</html>

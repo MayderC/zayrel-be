@@ -109,7 +109,7 @@ export class CartService {
 
         // Check if item already in cart
         const existingItemIndex = cart.items.findIndex(
-            item => item.variantId.toString() === dto.variantId
+            item => item.variantId?.toString() === dto.variantId
         );
 
         if (existingItemIndex >= 0) {
