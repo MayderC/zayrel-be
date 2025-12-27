@@ -236,7 +236,7 @@ export class MailService {
             paymentMethodDisplay: this.getPaymentMethodDisplay(paymentMethod),
             shippingAddress: order.shippingAddress || {},
             isManualPayment: paymentMethod === 'manual' || paymentMethod === 'sinpe' || paymentMethod === 'transfer',
-            orderUrl: `${this.storeUrl}/my-orders`,
+            orderUrl: `${this.storeUrl}/order/${order._id}`,
         });
 
         await this.sendMail({
@@ -280,7 +280,7 @@ export class MailService {
             paymentDate: new Date(),
             items,
             itemCount: items.length,
-            orderUrl: `${this.storeUrl}/my-orders`,
+            orderUrl: `${this.storeUrl}/order/${order._id}`,
         });
 
         await this.sendMail({
@@ -311,7 +311,7 @@ export class MailService {
             orderNumber,
             total: order.total,
             reason: reason || null,
-            orderUrl: `${this.storeUrl}/my-orders`,
+            orderUrl: `${this.storeUrl}/order/${order._id}`,
         });
 
         await this.sendMail({
@@ -353,7 +353,7 @@ export class MailService {
             total: order.total,
             paymentMethodDisplay: this.getPaymentMethodDisplay(paymentMethod),
             reference: order.paymentProof?.reference || null,
-            orderUrl: `${this.storeUrl}/my-orders`,
+            orderUrl: `${this.storeUrl}/order/${order._id}`,
         });
 
         await this.sendMail({
@@ -388,7 +388,7 @@ export class MailService {
             orderNumber,
             items,
             itemCount: items.length,
-            orderUrl: `${this.storeUrl}/my-orders`,
+            orderUrl: `${this.storeUrl}/order/${order._id}`,
         });
 
         await this.sendMail({
@@ -414,7 +414,7 @@ export class MailService {
             orderNumber,
             trackingNumber: order.trackingNumber,
             shippingProvider: order.shippingProvider || 'Correos de Costa Rica',
-            orderUrl: `${this.storeUrl}/my-orders`,
+            orderUrl: `${this.storeUrl}/order/${order._id}`,
         });
 
         await this.sendMail({

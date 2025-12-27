@@ -16,7 +16,7 @@ import { DashboardModule } from '../dashboard/dashboard.module';
             { name: Product.name, schema: ProductSchema },
             { name: User.name, schema: UserSchema },
         ]),
-        NotificationsModule,
+        forwardRef(() => NotificationsModule),
         StorageModule,
         forwardRef(() => DashboardModule),
     ],
