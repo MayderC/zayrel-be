@@ -119,6 +119,82 @@ export class PaymentService {
         return result;
     }
 
+    /**
+     * Handle PayPal webhook events specifically
+     * PayPal sends orderId in resource.purchase_units[0].reference_id
+     */
+    private async handlePayPalWebhook(payload: any) {
+        try {
+            const eventType = payload.event_type;
+            const resource = payload.resource;
+
+            this.logger.log(`PayPal Event Type: ${eventType}`);
+
+            // Extract orderId from purchase_units reference_id
+            const orderId = resource?.purchase_units?.[0]?.reference_id;
+            const paypalOrderId = resource?.id;
+
+            if (!orderId) {
+                this.logger.warn('PayPal webhook received without orderId in purchase_units.reference_id');
+                return { received: true, processed: false, reason: 'No orderId found' };
+            }
+
+            this.logger.log(`PayPal webhook for Order: ${orderId}, PayPal Order ID: ${paypalOrderId}`);
+
+            // Handle different PayPal events
+            if (eventType === 'CHECKOUT.ORDER.APPROVED') {
+                // Order was approved by buyer - we should capture the payment
+                this.logger.log(`Order ${orderId} approved. Status: ${resource.status}`);
+
+                // If auto-capture is enabled, the payment will be captured automatically
+                // For now, mark order as awaiting capture confirmation
+                return { received: true, processed: true, status: 'approved', orderId };
+            }
+
+            if (eventType === 'PAYMENT.CAPTURE.COMPLETED') {
+                // Payment was captured successfully - mark order as paid
+                const captureId = resource?.id;
+                const amount = resource?.amount?.value;
+                const currency = resource?.amount?.currency_code;
+
+                await this.ordersService.updateStatus(orderId, 'pagada');
+
+                // Store PayPal capture info
+                await this.ordersService.updatePaymentProof(orderId, {
+                    type: 'paypal',
+                    reference: captureId || paypalOrderId,
+                    status: 'verified',
+                });
+
+                this.logger.log(`Order ${orderId} marked as PAID via PayPal. Capture ID: ${captureId}, Amount: ${amount} ${currency}`);
+                return { received: true, processed: true, status: 'paid', orderId, captureId };
+            }
+
+            if (eventType === 'PAYMENT.CAPTURE.DENIED') {
+                // Payment was denied
+                const reason = resource?.status_details?.reason || 'Payment capture denied';
+
+                await this.ordersService.updatePaymentProof(orderId, {
+                    type: 'paypal',
+                    reference: paypalOrderId,
+                    status: 'rejected',
+                    reason: reason,
+                });
+
+                this.logger.warn(`Payment denied for order ${orderId}: ${reason}`);
+                return { received: true, processed: true, status: 'denied', orderId, reason };
+            }
+
+            // Unknown event type
+            this.logger.log(`Unhandled PayPal event type: ${eventType}`);
+            return { received: true, processed: false, eventType };
+
+        } catch (error) {
+            this.logger.error(`Error processing PayPal webhook: ${error.message}`);
+            return { received: true, error: error.message };
+        }
+    }
+
     async handleWebhook(gateway: string, payload: any, signature: string) {
         const strategy = this.strategies[gateway];
         if (!strategy) {
@@ -132,10 +208,14 @@ export class PaymentService {
             return { received: false };
         }
 
-        this.logger.log(`=== ONVOPAY WEBHOOK RECEIVED ===`);
+        this.logger.log(`=== ${gateway.toUpperCase()} WEBHOOK RECEIVED ===`);
         this.logger.log(`Gateway: ${gateway}`);
-        this.logger.log(`Signature: ${signature}`);
         this.logger.log(`Full Payload: ${JSON.stringify(payload, null, 2)}`);
+
+        // Handle PayPal webhooks specifically
+        if (gateway === 'paypal') {
+            return this.handlePayPalWebhook(payload);
+        }
 
         // Process Onvopay webhook events
         // Common event types: payment_intent.succeeded, payment_intent.failed
