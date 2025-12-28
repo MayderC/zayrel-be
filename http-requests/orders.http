@@ -1,0 +1,121 @@
+@host = http://localhost:3000
+@adminEmail = admin@example.com
+@adminPassword = strongAdminPassword123
+@userEmail = user@example.com
+@userPassword = strongUserPassword123
+
+# Estos tokens se llenarán manualmente después de ejecutar las peticiones de login
+@authToken = 
+@adminToken = 
+
+###
+# ===============================================
+# ORDERS - Pruebas del Módulo de Órdenes
+# ===============================================
+# Este módulo presenta varias vulnerabilidades críticas
+# de acceso público no deseado.
+###
+
+###
+# [VULNERABILIDAD] Listar todas las órdenes sin autenticación.
+# Debería fallar (401 o 403), pero actualmente responde con 200 OK.
+GET {{host}}/orders
+
+###
+# [Admin] Listar todas las órdenes con token de admin.
+# Esta es la forma en que debería funcionar.
+# Se espera 200 OK.
+GET {{host}}/orders
+Authorization: Bearer {{adminToken}}
+
+###
+# [Error - Usuario] Intentar listar todas las órdenes con token de usuario.
+# Se espera 403 Forbidden (una vez que la seguridad esté corregida).
+GET {{host}}/orders
+Authorization: Bearer {{authToken}}
+
+###
+# Creemos una orden para tener un ID para las pruebas.
+# Se asume que el producto con ID '60c72b2f9b1d8c001f8e4d1a' existe.
+# @name createOrder
+POST {{host}}/orders
+Content-Type: application/json
+
+{
+  "cart": {
+    "items": [
+      {
+        "variantId": "60c72b2f9b1d8c001f8e4d1a",
+        "quantity": 1,
+        "price": 99.99
+      }
+    ],
+    "total": 99.99
+  },
+  "guestInfo": {
+    "email": "guest-test@example.com",
+    "name": "Guest Tester"
+  },
+  "shippingAddress": {
+    "street": "123 Test St",
+    "city": "Testville",
+    "zip": "12345",
+    "country": "Testland"
+  },
+  "paymentMethod": "bank_transfer"
+}
+
+> {%
+    client.global.set("lastOrderId", response.body._id);
+%}
+
+@lastOrderId = {{createOrder.response.body._id}}
+
+###
+# [VULNERABILIDAD] Obtener detalles de una orden específica sin autenticación.
+# Debería fallar (401 o 403), pero actualmente responde con 200 OK.
+GET {{host}}/orders/{{lastOrderId}}
+
+###
+# [Admin] Obtener detalles de una orden con token de admin.
+# Se espera 200 OK.
+GET {{host}}/orders/{{lastOrderId}}
+Authorization: Bearer {{adminToken}}
+
+###
+# [Usuario] Obtener sus propias órdenes.
+# Se espera 200 OK.
+GET {{host}}/orders/mine
+Authorization: Bearer {{authToken}}
+
+###
+# [VULNERABILIDAD] Actualizar el estado de una orden sin autenticación.
+# Debería fallar (401 o 403), pero actualmente responde con 200 OK.
+PATCH {{host}}/orders/{{lastOrderId}}/status
+Content-Type: application/json
+
+{
+    "status": "en_produccion"
+}
+
+###
+# [Admin] Actualizar el estado de una orden con token de admin.
+# Se espera 200 OK.
+PATCH {{host}}/orders/{{lastOrderId}}/status
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+    "status": "enviada"
+}
+
+###
+# [VULNERABILIDAD] Subir un comprobante de pago sin autenticación.
+# Debería fallar (401 o 403), pero actualmente responde con 200 OK.
+PATCH {{host}}/orders/{{lastOrderId}}/payment-proof
+Content-Type: application/json
+
+{
+    "file": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=",
+    "fileName": "comprobante.png"
+}

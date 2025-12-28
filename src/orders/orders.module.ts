@@ -2,6 +2,7 @@ import { Module, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { OrdersController } from './orders.controller';
 import { OrdersService } from './orders.service';
+import { OrderAccessGuard } from '../auth/order-access.guard';
 import { Order, OrderSchema, OrderItem, OrderItemSchema, Variant, VariantSchema, Product, ProductSchema, User, UserSchema } from '../database/schemas';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { StorageModule } from '../storage/storage.module';
@@ -21,7 +22,8 @@ import { DashboardModule } from '../dashboard/dashboard.module';
         forwardRef(() => DashboardModule),
     ],
     controllers: [OrdersController],
-    providers: [OrdersService],
-    exports: [OrdersService],
+    providers: [OrdersService, OrderAccessGuard],
+    exports: [OrdersService, OrderAccessGuard],
 })
 export class OrdersModule { }
+

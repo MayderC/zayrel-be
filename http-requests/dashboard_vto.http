@@ -1,0 +1,81 @@
+@host = http://localhost:3000
+@adminEmail = admin@example.com
+@adminPassword = strongAdminPassword123
+@userEmail = user@example.com
+@userPassword = strongUserPassword123
+
+# Estos tokens se llenarán manualmente después de ejecutar las peticiones de login
+@authToken = 
+@adminToken = 
+
+###
+# ===============================================
+# DASHBOARD & VTO - Módulos con Lógica Específica
+# ===============================================
+###
+
+###
+# [Admin] Obtener las estadísticas del dashboard.
+# Se espera 200 OK.
+GET {{host}}/dashboard/stats
+Authorization: Bearer {{adminToken}}
+
+###
+# [Error - Usuario] Intentar obtener estádisticas con rol de usuario.
+# Se espera 403 Forbidden.
+GET {{host}}/dashboard/stats
+Authorization: Bearer {{authToken}}
+
+###
+# [Admin] Conectarse al stream de eventos del dashboard (SSE).
+# Nota: La mayoría de clientes REST no manejan SSE de forma nativa.
+# Esta es una representación. Se requiere un cliente compatible con SSE.
+# Se usa la autenticación por query param.
+GET {{host}}/dashboard/events?token={{adminToken}}
+Accept: text/event-stream
+
+---
+
+###
+# [Usuario] Obtener el número de tokens para Virtual-Try-On.
+# Se espera 200 OK.
+GET {{host}}/virtual-try-on/tokens
+Authorization: Bearer {{authToken}}
+
+###
+# [Error] Intentar obtener tokens VTO sin autenticación.
+# Se espera 401 Unauthorized.
+GET {{host}}/virtual-try-on/tokens
+
+###
+# [Usuario] Iniciar un proceso de VTO.
+# Esto es una petición `multipart/form-data` y es difícil de simular
+# en un archivo .http sin archivos reales. Esto es un esqueleto.
+# Se espera 200 OK o 202 Accepted.
+# Para probarlo, necesitarías un cliente que pueda adjuntar archivos.
+#
+# POST {{host}}/virtual-try-on/start
+# Authorization: Bearer {{authToken}}
+# Content-Type: multipart/form-data; boundary=boundary
+#
+# --boundary
+# Content-Disposition: form-data; name="garmentType"
+#
+# upper_body
+# --boundary
+# Content-Disposition: form-data; name="humanImage"; filename="human.jpg"
+# Content-Type: image/jpeg
+#
+# < ./path/to/your/human.jpg
+# --boundary
+# Content-Disposition: form-data; name="clothImage"; filename="cloth.jpg"
+# Content-Type: image/jpeg
+#
+# < ./path/to/your/cloth.jpg
+# --boundary--
+
+###
+# [Usuario] Consultar el estado de un job de VTO.
+# Reemplaza 'job-id-ejemplo' con un ID de job real.
+GET {{host}}/virtual-try-on/status/job-id-ejemplo
+Authorization: Bearer {{authToken}}

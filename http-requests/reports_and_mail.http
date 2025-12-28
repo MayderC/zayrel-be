@@ -1,0 +1,63 @@
+@host = http://localhost:3000
+@adminEmail = admin@example.com
+@adminPassword = strongAdminPassword123
+@userEmail = user@example.com
+@userPassword = strongUserPassword123
+
+# Estos tokens se llenarán manualmente después de ejecutar las peticiones de login
+@authToken = 
+@adminToken = 
+
+###
+# ===============================================
+# REPORTS & MAIL - Pruebas de Módulos Sensibles
+# ===============================================
+###
+
+###
+# [VULNERABILIDAD] Obtener reporte de ventas sin autenticación.
+# Debería fallar (401 o 403), pero actualmente responde con 200 OK (o 400 si faltan fechas).
+# Se espera 400 Bad Request porque faltan query params.
+GET {{host}}/reports/sales
+
+###
+# [VULNERABILIDAD] Obtener reporte de ventas sin autenticación (con fechas).
+# Debería fallar (401 o 403), pero actualmente responde con 200 OK.
+GET {{host}}/reports/sales?start=2023-01-01&end=2023-12-31
+
+###
+# [Admin] Obtener reporte de ventas con token de admin.
+# Esta es la forma correcta. Se espera 200 OK.
+GET {{host}}/reports/sales?start=2023-01-01&end=2023-12-31
+Authorization: Bearer {{adminToken}}
+
+###
+# [Error - Usuario] Intentar obtener reporte de ventas con token de usuario.
+# Se espera 403 Forbidden (una vez corregida la seguridad).
+GET {{host}}/reports/sales?start=2023-01-01&end=2023-12-31
+Authorization: Bearer {{authToken}}
+
+---
+
+###
+# [VULNERABILIDAD - DEV ONLY] Obtener info de debug del correo.
+# Aunque solo funciona en 'development', es público y expone configuración.
+# Debería ser solo para Admins.
+GET {{host}}/mail/debug
+
+###
+# [Admin] Acceso a debug de correo con token de Admin.
+# Así debería ser el acceso (una vez corregido).
+GET {{host}}/mail/debug
+Authorization: Bearer {{adminToken}}
+
+###
+# [VULNERABILIDAD - DEV ONLY] Enviar un email de bienvenida de prueba.
+# Permite enviar correos a cualquier dirección sin autenticación.
+POST {{host}}/mail/test/welcome
+Content-Type: application/json
+
+{
+    "to": "test@example.com",
+    "name": "Test Spammer"
+}

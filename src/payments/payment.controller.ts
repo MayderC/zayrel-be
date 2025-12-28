@@ -2,19 +2,17 @@
 import { Controller, Post, Body, Param, Req, BadRequestException, UseGuards } from '@nestjs/common';
 import { PaymentService } from './payment.service';
 import { InitiatePaymentDto } from './dto/initiate-payment.dto';
-
-// Assuming we have some AuthGuard. For now we skip or add TODO.
-// import { AuthGuard } from '../auth/auth.guard'; 
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('payments')
 export class PaymentController {
     constructor(private readonly paymentService: PaymentService) { }
 
+    // Authenticated users only - requires valid JWT token
     @Post('initiate')
-    // @UseGuards(JwtAuthGuard) // validation
+    @UseGuards(JwtAuthGuard)
     async initiate(@Body() dto: InitiatePaymentDto, @Req() req: any) {
-        // const userId = req.user?.userId;
-        const userId = "temp_user_id"; // Replace with actual user extraction
+        const userId = req.user._id;
         return this.paymentService.initiatePayment(userId, dto);
     }
 
@@ -26,3 +24,4 @@ export class PaymentController {
         return this.paymentService.handleWebhook(gateway, payload, signature);
     }
 }
+

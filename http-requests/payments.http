@@ -1,0 +1,58 @@
+@host = http://localhost:3000
+@adminEmail = admin@example.com
+@adminPassword = strongAdminPassword123
+@userEmail = user@example.com
+@userPassword = strongUserPassword123
+
+# Estos tokens se llenarán manualmente después de ejecutar las peticiones de login
+@authToken = 
+@adminToken = 
+
+###
+# ===============================================
+# PAYMENTS - Pruebas del Módulo de Pagos
+# ===============================================
+# La guarda de seguridad para iniciar pago está comentada en el código.
+###
+
+###
+# [VULNERABILIDAD/TODO] Iniciar un proceso de pago.
+# El guardián JwtAuthGuard está comentado en el código fuente.
+# Por lo tanto, esta petición actualmente funciona sin token.
+# Debería requerir autenticación.
+# Se espera 201 Created.
+POST {{host}}/payments/initiate
+# Authorization: Bearer {{authToken}} # -> Debería ser requerido
+Content-Type: application/json
+
+{
+    "orderId": "60c72b2f9b1d8c001f8e4d1a",
+    "gateway": "onvopay",
+    "amount": 99.99,
+    "currency": "USD",
+    "description": "Pago de prueba"
+}
+
+###
+# [Webhook] Simulación de un webhook entrante de OnvoPay.
+# Estos endpoints tienen guardias especiales que validan la firma del webhook,
+# por lo que una llamada directa sin la firma correcta debería fallar.
+# Se espera 401 Unauthorized o similar si la firma no es válida.
+POST {{host}}/payments/webhook/onvopay
+X-Webhook-Secret: invalid-secret
+Content-Type: application/json
+
+{
+    "event": "payment.succeeded",
+    "data": {
+        "id": "evt_12345",
+        "object": "event",
+        "data": {
+            "object": {
+                "id": "pi_12345",
+                "object": "payment_intent",
+                "status": "succeeded"
+            }
+        }
+    }
+}

@@ -1,0 +1,105 @@
+@host = http://localhost:3000
+@adminEmail = admin@example.com
+@adminPassword = strongAdminPassword123
+@userEmail = user@example.com
+@userPassword = strongUserPassword123
+
+# Estos tokens se llenarán manualmente después de ejecutar las peticiones de login
+@authToken = 
+@adminToken = 
+
+###
+# ===============================================
+# PRODUCTS - Pruebas del Módulo de Productos
+# ===============================================
+###
+
+###
+# [Público] Listar productos activos para la tienda.
+# Se espera 200 OK.
+GET {{host}}/products/listings
+
+###
+# [Público] Obtener un producto por slug.
+# Se espera 200 OK.
+# Reemplaza 'mi-producto-estrella' con un slug que exista en tu DB.
+GET {{host}}/products/mi-producto-estrella
+
+###
+# [Público] Buscar productos.
+# Se espera 200 OK.
+GET {{host}}/products/search?q=camiseta
+
+###
+# [Admin] Crear un nuevo producto base.
+# Se espera 201 Created.
+# @name createProduct
+POST {{host}}/products
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+    "name": "Camiseta de Prueba API",
+    "description": "Una camiseta creada desde las pruebas de API.",
+    "sku": "API-TEST-001"
+}
+
+@lastProductId = {{createProduct.response.body._id}}
+
+###
+# [Admin] Editar el producto recién creado.
+# Se espera 200 OK.
+PUT {{host}}/products/{{lastProductId}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+    "name": "Camiseta de Prueba API (Editada)"
+}
+
+###
+# [Error - Usuario] Intentar crear un producto con token de usuario.
+# Se espera 403 Forbidden.
+POST {{host}}/products
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+    "name": "Intento de Camiseta",
+    "description": "Esto no debería funcionar.",
+    "sku": "API-FAIL-001"
+}
+
+###
+# [Error - Público] Intentar crear un producto sin token.
+# Se espera 401 Unauthorized.
+POST {{host}}/products
+Content-Type: application/json
+
+{
+    "name": "Intento de Camiseta Público",
+    "description": "Esto tampoco debería funcionar.",
+    "sku": "API-FAIL-002"
+}
+
+###
+# [Admin] Crear una categoría.
+# Se espera 201 Created.
+POST {{host}}/products/categories
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+    "name": "Categoría de Prueba"
+}
+
+###
+# [Público] Listar categorías.
+# Se espera 200 OK.
+GET {{host}}/products/categories
+
+###
+# [Admin] Eliminar el producto creado.
+# Se espera 200 OK o 204 No Content.
+DELETE {{host}}/products/{{lastProductId}}
+Authorization: Bearer {{adminToken}}

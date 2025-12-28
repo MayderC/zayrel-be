@@ -1,0 +1,85 @@
+@host = http://localhost:3000
+@adminEmail = admin@example.com
+@adminPassword = strongAdminPassword123
+@userEmail = user@example.com
+@userPassword = strongUserPassword123
+
+# Estos tokens se llenarán manualmente después de ejecutar las peticiones de login
+@authToken = 
+@adminToken = 
+
+###
+# ===============================================
+# COUPONS - Pruebas del Módulo de Cupones
+# ===============================================
+# La mayoría de endpoints aquí requieren rol de Admin.
+###
+
+###
+# [Admin] Crear un nuevo cupón.
+# Se espera 201 Created.
+# @name createCoupon
+POST {{host}}/coupons
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+    "code": "SUMMER25",
+    "discountType": "percentage",
+    "discountValue": 25,
+    "expiresAt": "2026-09-30T23:59:59.000Z",
+    "minPurchase": 50
+}
+
+> {%
+    client.global.set("lastCouponId", response.body._id);
+%}
+
+###
+# [Error - Usuario] Intentar crear un cupón con rol de usuario.
+# Se espera 403 Forbidden.
+POST {{host}}/coupons
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+    "code": "FAIL-CUPON",
+    "discountType": "fixed",
+    "discountValue": 10
+}
+
+###
+# [Admin] Listar todos los cupones.
+# Se espera 200 OK.
+GET {{host}}/coupons
+Authorization: Bearer {{adminToken}}
+
+###
+# [Público] Validar un cupón existente.
+# Se espera 200 OK con `valid: true`.
+POST {{host}}/coupons/validate
+Content-Type: application/json
+
+{
+    "code": "SUMMER25",
+    "subtotal": 60
+}
+
+###
+# [Público] Validar un cupón que no cumple el mínimo.
+# Se espera 200 OK con `valid: false`.
+POST {{host}}/coupons/validate
+Content-Type: application/json
+
+{
+    "code": "SUMMER25",
+    "subtotal": 40
+}
+
+@lastCouponId = {{createCoupon.response.body._id}}
+
+###
+# [Admin] Eliminar el cupón creado.
+# Se espera 200 OK.
+DELETE {{host}}/coupons/{{lastCouponId}}
+Authorization: Bearer {{adminToken}}

@@ -1,7 +1,11 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, Get } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus, Get, UseGuards } from '@nestjs/common';
 import { MailService } from './mail.service';
 import { ConfigService } from '@nestjs/config';
 import { IsEmail, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
+import { Role } from '../auth/roles.enum';
 
 class TestEmailDto {
     @IsEmail()
@@ -40,9 +44,11 @@ export class MailController {
 
     /**
      * Debug endpoint to check mail configuration
-     * Only available in development mode
+     * Only available in development mode and requires admin authentication
      */
     @Get('debug')
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(Role.Admin)
     getMailConfig() {
         if (!this.isDevelopment) {
             return { error: 'This endpoint is only available in development mode' };
@@ -71,9 +77,11 @@ export class MailController {
 
     /**
      * Test endpoint for welcome email
-     * Only available in development mode
+     * Only available in development mode and requires admin authentication
      */
     @Post('test/welcome')
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(Role.Admin)
     @HttpCode(HttpStatus.OK)
     async testWelcomeEmail(@Body() dto: TestEmailDto) {
         if (!this.isDevelopment) {
@@ -94,9 +102,11 @@ export class MailController {
 
     /**
      * Test endpoint for password reset email
-     * Only available in development mode
+     * Only available in development mode and requires admin authentication
      */
     @Post('test/password-reset')
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(Role.Admin)
     @HttpCode(HttpStatus.OK)
     async testPasswordResetEmail(@Body() dto: TestPasswordResetDto) {
         if (!this.isDevelopment) {

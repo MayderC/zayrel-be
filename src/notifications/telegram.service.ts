@@ -2,12 +2,26 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import * as FormData from 'form-data';
+import {
+    STATUS_TO_TOPIC_ENV,
+    STATUS_EMOJIS,
+    STATUS_LABELS,
+    WORKFLOW_NEXT_STEPS,
+    PAYMENT_REVIEW_BUTTONS,
+    getWhatsAppApprovedMessage,
+    getWhatsAppRejectedMessage,
+    getWhatsAppStatusMessage,
+    buildPaymentProofMessage,
+    buildStatusChangeMessage,
+} from './telegram-templates';
 
 /**
  * Telegram Service
  * 
  * Sends payment proof notifications to admin Telegram group with approve/reject buttons.
  * Handles callback queries from button presses.
+ * 
+ * Templates and message content are defined in telegram-templates.ts
  */
 @Injectable()
 export class TelegramService {
@@ -49,48 +63,39 @@ export class TelegramService {
                 : order.guestInfo?.name || 'Cliente';
 
             const customerEmail = order.user?.email || order.guestInfo?.email || 'N/A';
-
-            // Format total - simple USD format
+            const customerPhone = order.guestInfo?.contact || order.shippingAddress?.phone || '';
             const total = `$${(order.total || 0).toFixed(2)}`;
-
-            // Payment method
             const paymentMethod = order.paymentProof?.method || order.paymentMethod || 'Transferencia';
-
-            // Reference (transaction reference from customer)
             const reference = order.paymentProof?.reference || '';
 
-            // Build message
-            const message = `
-🧾 <b>Nuevo Comprobante de Pago</b>
+            // Generate WhatsApp templates
+            const whatsappApproved = getWhatsAppApprovedMessage({ customerName, shortOrderId: shortId });
+            const whatsappRejected = getWhatsAppRejectedMessage({ customerName, shortOrderId: shortId });
 
-<b>Orden:</b> #${shortId}
-<b>Cliente:</b> ${customerName}
-<b>Email:</b> ${customerEmail}
-<b>Total:</b> ${total}
-<b>Método:</b> ${paymentMethod}${reference ? `\n<b>Referencia:</b> ${reference}` : ''}
+            // Build message using template
+            const message = buildPaymentProofMessage({
+                shortOrderId: shortId,
+                customerName,
+                customerEmail,
+                customerPhone,
+                total,
+                paymentMethod,
+                reference,
+                whatsappApproved,
+                whatsappRejected,
+            });
 
-<i>Toca un botón para aprobar o rechazar:</i>
-            `.trim();
+            // Get buttons from template
+            const buttons = PAYMENT_REVIEW_BUTTONS.initial(orderId);
 
-            // Send photo with buttons in one message (so both get deleted together)
+            // Send photo with buttons
             const imageUrl = order.paymentProof?.url;
             if (imageUrl) {
                 this.logger.log(`📷 Sending payment proof with buttons for order #${shortId}`);
-                await this.sendPhotoWithButtons(imageUrl, message, [
-                    [
-                        { text: '✅ Aprobar', callback_data: `approve_step1:${orderId}` },
-                        { text: '❌ Rechazar', callback_data: `reject_step1:${orderId}` }
-                    ]
-                ]);
+                await this.sendPhotoWithButtons(imageUrl, message, buttons);
             } else {
-                // No image, just send message with buttons
                 this.logger.warn(`⚠️ No payment proof URL found for order ${shortId}`);
-                await this.sendMessageWithButtons(message, [
-                    [
-                        { text: '✅ Aprobar', callback_data: `approve_step1:${orderId}` },
-                        { text: '❌ Rechazar', callback_data: `reject_step1:${orderId}` }
-                    ]
-                ]);
+                await this.sendMessageWithButtons(message, buttons);
             }
 
             this.logger.log(`📱 Payment proof notification sent for order #${shortId}`);
@@ -109,40 +114,7 @@ export class TelegramService {
             return;
         }
 
-        const topicMap: Record<string, string> = {
-            'pagada': 'TELEGRAM_TOPIC_PAGADA',
-            'rechazada': 'TELEGRAM_TOPIC_REVISION',
-            'en_produccion': 'TELEGRAM_TOPIC_EN_PRODUCCION',
-            'enviada': 'TELEGRAM_TOPIC_ENVIADA',
-            'completada': 'TELEGRAM_TOPIC_COMPLETADA',
-        };
-
-        const statusEmoji: Record<string, string> = {
-            'pagada': '✅',
-            'rechazada': '❌',
-            'en_produccion': '🛠️',
-            'enviada': '🚀',
-            'completada': '📦',
-        };
-
-        const statusLabels: Record<string, string> = {
-            'pagada': 'PAGADA',
-            'rechazada': 'RECHAZADA',
-            'en_produccion': 'EN PRODUCCIÓN',
-            'enviada': 'ENVIADA',
-            'completada': 'COMPLETADA',
-        };
-
-        // Next step buttons based on current status
-        const nextStepButtons: Record<string, { text: string; action: string } | null> = {
-            'pagada': { text: '🛠️ Mover a Producción', action: 'move_produccion' },
-            'en_produccion': { text: '🚀 Marcar como Enviada', action: 'move_enviada' },
-            'enviada': { text: '📦 Marcar Completada', action: 'move_completada' },
-            'completada': null,
-            'rechazada': null,
-        };
-
-        const topicEnv = topicMap[newStatus];
+        const topicEnv = STATUS_TO_TOPIC_ENV[newStatus];
         if (!topicEnv) {
             this.logger.debug(`No topic configured for status: ${newStatus}`);
             return;
@@ -157,6 +129,7 @@ export class TelegramService {
         try {
             const orderId = order._id.toString();
             const shortId = orderId.slice(-6).toUpperCase();
+
             const customerName = order.user?.firstname
                 ? `${order.user.firstname} ${order.user.lastname || ''}`
                 : order.guestInfo?.name || 'Cliente';
@@ -164,8 +137,6 @@ export class TelegramService {
             const customerEmail = order.user?.email || order.guestInfo?.email || 'N/A';
             const customerPhone = order.guestInfo?.contact || order.shippingAddress?.phone || '';
             const total = `$${(order.total || 0).toFixed(2)}`;
-            const emoji = statusEmoji[newStatus] || '📋';
-            const label = statusLabels[newStatus] || newStatus;
 
             // Format date
             const now = new Date();
@@ -174,28 +145,35 @@ export class TelegramService {
                 hour: '2-digit', minute: '2-digit'
             });
 
-            // Tracking info (if exists)
-            const tracking = order.trackingNumber ? `\n<b>Guía:</b> ${order.trackingNumber}` : '';
-
             // Items summary
             const itemCount = order.items?.length || 0;
             const itemsText = itemCount > 0 ? `${itemCount} producto${itemCount > 1 ? 's' : ''}` : '';
 
-            let message = `
-${emoji} <b>Orden #${shortId}</b> - ${label}
+            // Get WhatsApp template for this status
+            const whatsappTemplate = getWhatsAppStatusMessage(newStatus, {
+                customerName,
+                shortOrderId: shortId,
+                trackingNumber: order.trackingNumber,
+            });
 
-<b>📅 Fecha:</b> ${dateStr}
-<b>👤 Cliente:</b> ${customerName}
-<b>📧 Email:</b> ${customerEmail}${customerPhone ? `\n<b>📱 Tel:</b> ${customerPhone}` : ''}
-<b>💰 Total:</b> ${total} (${itemsText})${tracking}
-            `.trim();
-
-            if (extra) {
-                message += `\n<b>📝 Nota:</b> ${extra}`;
-            }
+            // Build message using template
+            const message = buildStatusChangeMessage({
+                shortOrderId: shortId,
+                statusEmoji: STATUS_EMOJIS[newStatus] || '📋',
+                statusLabel: STATUS_LABELS[newStatus] || newStatus,
+                dateStr,
+                customerName,
+                customerEmail,
+                customerPhone,
+                total,
+                itemsText,
+                trackingNumber: order.trackingNumber,
+                extraNote: extra,
+                whatsappTemplate,
+            });
 
             // Check if there's a next step button for this status
-            const nextStep = nextStepButtons[newStatus];
+            const nextStep = WORKFLOW_NEXT_STEPS[newStatus];
             if (nextStep) {
                 await axios.post(`${this.baseUrl}/sendMessage`, {
                     chat_id: this.groupChatId,
@@ -209,7 +187,6 @@ ${emoji} <b>Orden #${shortId}</b> - ${label}
                     }
                 });
             } else {
-                // No button (completada/rechazada)
                 await this.sendMessage(message, topicId);
             }
 
@@ -235,52 +212,32 @@ ${emoji} <b>Orden #${shortId}</b> - ${label}
 
         const [action, orderId] = data.split(':');
 
-        // Handle confirmation steps
+        // Handle confirmation steps using template buttons
         if (action === 'approve_step1') {
-            // Show confirmation buttons
-            await this.editMessageButtons(message.chat.id, message.message_id, [
-                [
-                    { text: '✅ SÍ, APROBAR', callback_data: `approve_confirm:${orderId}` },
-                    { text: '↩️ Cancelar', callback_data: `cancel:${orderId}` }
-                ]
-            ]);
+            await this.editMessageButtons(message.chat.id, message.message_id, PAYMENT_REVIEW_BUTTONS.confirmApprove(orderId));
             await this.answerCallback(queryId, '¿Confirmar aprobación?');
             return { success: true };
         }
 
         if (action === 'reject_step1') {
-            // Show confirmation buttons
-            await this.editMessageButtons(message.chat.id, message.message_id, [
-                [
-                    { text: '❌ SÍ, RECHAZAR', callback_data: `reject_confirm:${orderId}` },
-                    { text: '↩️ Cancelar', callback_data: `cancel:${orderId}` }
-                ]
-            ]);
+            await this.editMessageButtons(message.chat.id, message.message_id, PAYMENT_REVIEW_BUTTONS.confirmReject(orderId));
             await this.answerCallback(queryId, '¿Confirmar rechazo?');
             return { success: true };
         }
 
         if (action === 'cancel') {
-            // Restore original buttons
-            await this.editMessageButtons(message.chat.id, message.message_id, [
-                [
-                    { text: '✅ Aprobar', callback_data: `approve_step1:${orderId}` },
-                    { text: '❌ Rechazar', callback_data: `reject_step1:${orderId}` }
-                ]
-            ]);
+            await this.editMessageButtons(message.chat.id, message.message_id, PAYMENT_REVIEW_BUTTONS.initial(orderId));
             await this.answerCallback(queryId, 'Cancelado');
             return { success: true };
         }
 
         if (action === 'approve_confirm') {
-            // Delete the message after approval
             await this.deleteMessage(message.chat.id, message.message_id);
             await this.answerCallback(queryId, '✅ Pago aprobado - mensaje eliminado');
             return { success: true, action: 'approved', orderId };
         }
 
         if (action === 'reject_confirm') {
-            // Delete the message after rejection
             await this.deleteMessage(message.chat.id, message.message_id);
             await this.answerCallback(queryId, '❌ Pago rechazado - mensaje eliminado');
             return { success: true, action: 'rejected', orderId };
@@ -308,18 +265,19 @@ ${emoji} <b>Orden #${shortId}</b> - ${label}
         return { success: false };
     }
 
+    // ============================================
+    // LOW-LEVEL TELEGRAM API METHODS
+    // ============================================
+
     /**
      * Send photo to group - handles both URLs and base64 images
      */
     private async sendPhoto(photoSource: string, caption: string): Promise<void> {
         try {
-            // Check if it's a base64 image
             if (photoSource.startsWith('data:image')) {
-                // Extract base64 data (remove data:image/xxx;base64, prefix)
                 const base64Data = photoSource.replace(/^data:image\/\w+;base64,/, '');
                 const imageBuffer = Buffer.from(base64Data, 'base64');
 
-                // Create form data with the buffer
                 const form = new FormData();
                 form.append('chat_id', this.groupChatId);
                 form.append('caption', caption);
@@ -333,7 +291,6 @@ ${emoji} <b>Orden #${shortId}</b> - ${label}
                 });
                 this.logger.log('📷 Base64 image uploaded to Telegram');
             } else {
-                // It's a URL, send normally
                 await axios.post(`${this.baseUrl}/sendPhoto`, {
                     chat_id: this.groupChatId,
                     photo: photoSource,
@@ -347,14 +304,13 @@ ${emoji} <b>Orden #${shortId}</b> - ${label}
     }
 
     /**
-     * Send photo with inline keyboard buttons (combined message)
+     * Send photo with inline keyboard buttons
      */
     private async sendPhotoWithButtons(photoSource: string, caption: string, buttons: any[][]): Promise<void> {
         try {
             const replyMarkup = { inline_keyboard: buttons };
 
             if (photoSource.startsWith('data:image')) {
-                // Base64 image
                 const base64Data = photoSource.replace(/^data:image\/\w+;base64,/, '');
                 const imageBuffer = Buffer.from(base64Data, 'base64');
 
@@ -372,7 +328,6 @@ ${emoji} <b>Orden #${shortId}</b> - ${label}
                     headers: form.getHeaders()
                 });
             } else {
-                // URL
                 await axios.post(`${this.baseUrl}/sendPhoto`, {
                     chat_id: this.groupChatId,
                     photo: photoSource,
@@ -417,7 +372,7 @@ ${emoji} <b>Orden #${shortId}</b> - ${label}
     }
 
     /**
-     * Edit message text (removes buttons)
+     * Edit message text
      */
     private async editMessageText(chatId: number, messageId: number, text: string): Promise<void> {
         await axios.post(`${this.baseUrl}/editMessageText`, {

@@ -1,0 +1,83 @@
+@host = http://localhost:3000
+@adminEmail = admin@example.com
+@adminPassword = strongAdminPassword123
+@userEmail = user@example.com
+@userPassword = strongUserPassword123
+
+# Estos tokens se llenarán manualmente después de ejecutar las peticiones de login
+@authToken = 
+@adminToken = 
+
+
+###
+# ===============================================
+# CART - Pruebas del Módulo del Carrito
+# ===============================================
+# Todos los endpoints aquí requieren autenticación de usuario.
+###
+
+###
+# [Usuario] Obtener el carrito de compras.
+# Se espera 200 OK.
+GET {{host}}/cart
+Authorization: Bearer {{authToken}}
+
+###
+# [Error] Intentar obtener el carrito sin autenticación.
+# Se espera 401 Unauthorized.
+GET {{host}}/cart
+
+###
+# [Usuario] Añadir un ítem al carrito.
+# Reemplaza 'variantId' con un ID de variante de producto válido.
+# @name addItemToCart
+POST {{host}}/cart/items
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+    "variantId": "60c72b2f9b1d8c001f8e4d1e",
+    "quantity": 1
+}
+
+
+@itemVariantId = 60c72b2f9b1d8c001f8e4d1e
+###
+# [Usuario] Actualizar la cantidad de un ítem en el carrito.
+# Se espera 200 OK.
+PATCH {{host}}/cart/items/{{itemVariantId}}
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+    "quantity": 3
+}
+
+###
+# [Usuario] Aplicar un cupón al carrito.
+# Reemplaza 'TESTCUPON' con un código de cupón válido.
+POST {{host}}/cart/coupon
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+    "code": "TESTCUPON"
+}
+
+###
+# [Usuario] Quitar el cupón del carrito.
+# Se espera 200 OK.
+DELETE {{host}}/cart/coupon
+Authorization: Bearer {{authToken}}
+
+###
+# [Usuario] Eliminar un ítem del carrito.
+# Se espera 200 OK.
+DELETE {{host}}/cart/items/{{itemVariantId}}
+Authorization: Bearer {{authToken}}
+
+###
+# [Usuario] Vaciar completamente el carrito.
+# Se espera 200 OK.
+DELETE {{host}}/cart
+Authorization: Bearer {{authToken}}

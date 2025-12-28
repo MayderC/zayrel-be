@@ -1,0 +1,101 @@
+@host = http://localhost:3000
+@adminEmail = admin@example.com
+@adminPassword = strongAdminPassword123
+@userEmail = user@example.com
+@userPassword = strongUserPassword123
+
+# Estos tokens se llenarán manualmente después de ejecutar las peticiones de login
+@authToken = 
+@adminToken = 
+
+###
+# ===============================================
+# USERS - Pruebas del Módulo de Usuarios
+# ===============================================
+###
+
+###
+# [Admin] Listar todos los usuarios.
+# Se espera 200 OK.
+GET {{host}}/users
+Authorization: Bearer {{adminToken}}
+
+###
+# [Error] Intentar listar usuarios sin ser admin.
+# Se espera 403 Forbidden.
+GET {{host}}/users
+Authorization: Bearer {{authToken}}
+
+###
+# [Error] Intentar listar usuarios sin autenticación.
+# Se espera 401 Unauthorized.
+GET {{host}}/users
+
+###
+# [Admin] Obtener estadísticas de usuarios.
+# Se espera 200 OK.
+GET {{host}}/users/stats
+Authorization: Bearer {{adminToken}}
+
+###
+# [Usuario] Obtener sus propias direcciones.
+# Se espera 200 OK.
+GET {{host}}/users/me/addresses
+Authorization: Bearer {{authToken}}
+
+###
+# [Usuario] Añadir una nueva dirección.
+# Se espera 200 OK o 201 Created.
+POST {{host}}/users/me/addresses
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+    "label": "Casa",
+    "street": "Av. Principal 123",
+    "city": "Ciudad Ejemplo",
+    "state": "Estado Ejemplo",
+    "zip": "12345",
+    "country": "PA",
+    "phone": "66778899"
+}
+
+###
+# [Admin] Banear un usuario.
+# Se necesita el ID de un usuario (usamos el del `loginUser`).
+# Primero, obtenemos el ID del usuario.
+# @name getUserProfile
+GET {{host}}/auth/profile
+Authorization: Bearer {{authToken}}
+
+@userIdToBan = {{getUserProfile.response.body._id}}
+
+###
+# Ahora, baneamos al usuario con el ID obtenido.
+# Se espera 200 OK.
+PATCH {{host}}/users/{{userIdToBan}}/ban
+Authorization: Bearer {{adminToken}}
+
+###
+# [Admin] Desbanear al mismo usuario.
+# Se espera 200 OK.
+PATCH {{host}}/users/{{userIdToBan}}/unban
+Authorization: Bearer {{adminToken}}
+
+###
+# [Error - Usuario] Intentar banear a otro usuario siendo un usuario normal.
+# Se espera 403 Forbidden.
+PATCH {{host}}/users/{{userIdToBan}}/ban
+Authorization: Bearer {{authToken}}
+
+###
+# [Redundancia] Probar el endpoint de registro duplicado en /users.
+# Se espera 201 Created.
+POST {{host}}/users/register
+Content-Type: application/json
+
+{
+    "email": "another-test-user@example.com",
+    "password": "password123",
+    "name": "Another Test"
+}

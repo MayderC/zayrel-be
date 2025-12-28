@@ -1,0 +1,111 @@
+@host = http://localhost:3000
+@adminEmail = admin@example.com
+@adminPassword = strongAdminPassword123
+@userEmail = user@example.com
+@userPassword = strongUserPassword123
+
+# Estos tokens se llenarán manualmente después de ejecutar las peticiones de login
+@authToken = 
+@adminToken = 
+
+
+###
+# ===============================================
+# AUTH - Autenticación y Perfil
+# ===============================================
+# Estos endpoints son la base para obtener los tokens
+# que se usarán en el resto de las pruebas.
+###
+
+###
+# [Público] Registrar un nuevo usuario normal.
+# Debería devolver un token de acceso y de refresco.
+# @name registerUser
+POST {{host}}/auth/register
+Content-Type: application/json
+
+{
+    "email": "{{userEmail}}",
+    "password": "{{userPassword}}",
+    "name": "Test User"
+}
+
+###
+# [Público] Registrar un nuevo usuario administrador.
+# NOTA: En la aplicación real, la creación de admins debería
+# ser un proceso protegido. Aquí lo hacemos para las pruebas.
+# @name registerAdmin
+POST {{host}}/auth/register
+Content-Type: application/json
+
+{
+    "email": "{{adminEmail}}",
+    "password": "{{adminPassword}}",
+    "name": "Test Admin",
+    "roles": ["admin"]
+}
+
+###
+# [Público] Iniciar sesión como usuario normal.
+# Guarda el token de acceso en la variable @authToken.
+# @name loginUser
+POST {{host}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "{{userEmail}}",
+    "password": "{{userPassword}}"
+}
+
+> {%
+    client.global.set("authToken", response.body.accessToken);
+%}
+
+###
+# [Público] Iniciar sesión como administrador.
+# Guarda el token de acceso en la variable @adminToken.
+# @name loginAdmin
+POST {{host}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "{{adminEmail}}",
+    "password": "{{adminPassword}}"
+}
+
+> {%
+    client.global.set("adminToken", response.body.accessToken);
+%}
+
+###
+# [Usuario] Obtener el perfil del usuario autenticado.
+# Se espera 200 OK.
+GET {{host}}/auth/profile
+Authorization: Bearer {{authToken}}
+
+###
+# [Error] Intentar obtener el perfil sin token.
+# Se espera 401 Unauthorized.
+GET {{host}}/auth/profile
+
+###
+# [Usuario] Cambiar contraseña del usuario autenticado.
+# Se espera 200 OK.
+POST {{host}}/auth/change-password
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+    "oldPassword": "{{userPassword}}",
+    "newPassword": "newStrongPassword456"
+}
+
+###
+# [Público] Solicitar reseteo de contraseña.
+# Se espera 200 OK.
+POST {{host}}/auth/forgot-password
+Content-Type: application/json
+
+{
+    "email": "{{userEmail}}"
+}
