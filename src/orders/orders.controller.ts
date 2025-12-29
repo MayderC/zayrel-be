@@ -12,10 +12,11 @@ import { CreateOrderDto, UpdatePaymentProofDto, UpdateOrderTrackingDto } from '.
 export class OrdersController {
     constructor(private readonly ordersService: OrdersService) { }
 
-    // Public - allows guest checkout
+    // Hybrid - allows guest checkout, uses token if available for security
     @Post()
-    create(@Body() createOrderDto: CreateOrderDto) {
-        return this.ordersService.create(createOrderDto);
+    @UseGuards(OptionalJwtAuthGuard)
+    create(@Body() createOrderDto: CreateOrderDto, @Request() req) {
+        return this.ordersService.create(createOrderDto, req.user);
     }
 
     // Admin only - list all orders

@@ -20,9 +20,9 @@ export class OrdersService {
         @Inject(forwardRef(() => DashboardService)) private dashboardService: DashboardService,
     ) { }
 
-    async create(createOrderDto: CreateOrderDto) {
-        // DEBUG: Log incoming user data
-        console.log('[OrdersService.create] Received user:', createOrderDto.user, 'guestInfo:', createOrderDto.guestInfo?.email);
+    async create(createOrderDto: CreateOrderDto, authenticatedUser?: any) {
+        // SECURITY: Log incoming data for debugging
+        console.log('[OrdersService.create] AuthenticatedUser:', authenticatedUser?._id, 'guestInfo:', createOrderDto.guestInfo?.email);
 
         // 1. Validate Items & Stock
         const orderItemsData: any[] = [];
@@ -35,15 +35,12 @@ export class OrdersService {
                 throw new BadRequestException(`Insufficient stock for variant ${item.variantId}`);
             }
 
-            // Determine price: Use provided unitPrice or fetch from Product
-            let price = item.unitPrice;
-            if (price === undefined) {
-                const product = variant.product as any;
-                price = product.price;
-            }
-
-            // Get product name for email
+            // SECURITY: Always fetch price from database to prevent price manipulation
             const product = variant.product as any;
+            if (!product || typeof product.price !== 'number') {
+                throw new BadRequestException(`Price not found for variant ${item.variantId}`);
+            }
+            const price = product.price;
 
             orderItemsData.push({
                 variantId: item.variantId,
@@ -56,10 +53,22 @@ export class OrdersService {
             });
         }
 
-        // 2. Create Order
+        // 2. SECURITY: Determine user securely - use authenticated user, ignore DTO.user
+        let userIdForOrder: Types.ObjectId | undefined;
+        let guestInfoForOrder = createOrderDto.guestInfo;
+
+        if (authenticatedUser) {
+            // Authenticated user: use their ID from the verified token
+            userIdForOrder = new Types.ObjectId(authenticatedUser._id);
+            guestInfoForOrder = undefined; // Logged in users are not guests
+        } else if (createOrderDto.user) {
+            // SECURITY: Guest checkout with user ID in payload - ignore and log
+            console.warn(`[SECURITY] Guest order attempted with user ID (${createOrderDto.user}). Ignoring.`);
+        }
+
         const newOrder = new this.orderModel({
-            user: createOrderDto.user ? new Types.ObjectId(createOrderDto.user) : undefined,
-            guestInfo: createOrderDto.guestInfo,
+            user: userIdForOrder,
+            guestInfo: guestInfoForOrder,
             shippingAddress: createOrderDto.shippingAddress,
             orderType: createOrderDto.orderType || 'online',
             status: createOrderDto.orderType === 'manual_sale' ? 'pagada' : 'esperando_pago',
@@ -85,17 +94,17 @@ export class OrdersService {
         // 4. Send order confirmation email (async, non-blocking)
         // Get user email if this is an authenticated order
         let userEmail: string | undefined;
-        if (createOrderDto.user) {
-            const user = await this.userModel.findById(createOrderDto.user).select('email firstname lastname');
+        if (userIdForOrder) {
+            const user = await this.userModel.findById(userIdForOrder).select('email firstname lastname');
             userEmail = user?.email;
         }
 
         // Prepare order object with items for email template
         const orderForEmail = {
             ...savedOrder.toObject(),
-            user: createOrderDto.user ? {
+            user: userIdForOrder ? {
                 email: userEmail,
-                _id: createOrderDto.user
+                _id: userIdForOrder
             } : undefined,
             items: orderItemsData.map(item => ({
                 name: item.productName,

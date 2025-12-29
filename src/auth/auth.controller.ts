@@ -55,6 +55,23 @@ export class AuthController {
     return this.authService.getProfile(req.user._id);
   }
 
+  /**
+   * Get current authenticated user info
+   * Used by frontend to get user data securely from the server
+   * GET /auth/me
+   */
+  @UseGuards(JwtAuthGuard)
+  @Get('me')
+  getCurrentUser(@Request() req: AuthenticatedRequest) {
+    return {
+      _id: req.user._id,
+      email: req.user.email,
+      role: req.user.role,
+      firstname: req.user.firstname,
+      lastname: req.user.lastname,
+    };
+  }
+
   @UseGuards(JwtAuthGuard)
   @Post('change-password')
   @HttpCode(HttpStatus.OK)
