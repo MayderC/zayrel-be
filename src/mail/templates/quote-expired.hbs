@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cotización Vencida - ZayrelStudio</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f5f5; }
+        .container { max-width: 600px; margin: 0 auto; background: #ffffff; }
+        .header { background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%); padding: 40px; text-align: center; }
+        .header h1 { color: #fff; font-size: 28px; margin-bottom: 10px; }
+        .header p { color: rgba(255,255,255,0.9); font-size: 16px; }
+        .content { padding: 40px; }
+        .greeting { font-size: 22px; color: #333; margin-bottom: 20px; }
+        .message { color: #555; font-size: 16px; line-height: 1.8; margin-bottom: 25px; }
+        .warning-box { background: #f3f4f6; border-left: 4px solid #6b7280; padding: 20px; margin: 25px 0; border-radius: 4px; }
+        .warning-box p { color: #374151; font-size: 14px; }
+        .cta-button { display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff !important; text-decoration: none; padding: 16px 40px; border-radius: 30px; font-weight: 600; font-size: 16px; margin: 20px 0; }
+        .footer { background: #2d3748; color: #a0aec0; padding: 30px; text-align: center; font-size: 13px; }
+        .footer a { color: #3b82f6; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⏰ Cotización Vencida</h1>
+            <p>El tiempo para responder ha expirado</p>
+        </div>
+        <div class="content">
+            <h2 class="greeting">Hola {{customerName}},</h2>
+            <p class="message">
+                La cotización <strong>#{{quoteNumber}}</strong> ha vencido porque no recibimos tu respuesta
+                dentro del plazo de 7 días.
+            </p>
+            <div class="warning-box">
+                <p>⏰ <strong>Cotización #{{quoteNumber}}</strong> — Expirada</p>
+            </div>
+            <p class="message">
+                Si todavía te interesa el diseño, podés volver al editor y enviarnos una nueva solicitud.
+                Estaremos felices de volverte a cotizar.
+            </p>
+            <div style="text-align: center; margin-top: 30px;">
+                <a href="{{appUrl}}" class="cta-button">Volver al Editor</a>
+            </div>
+            <p style="color: #333; font-size: 16px; margin-top: 30px;">
+                ¡Hasta pronto!<br>
+                <strong>El equipo de {{brandName}}</strong>
+            </p>
+        </div>
+        <div class="footer">
+            <p>© {{year}} {{brandName}}. Todos los derechos reservados.</p>
+            <p style="margin-top: 10px;">
+                <a href="{{instagramUrl}}">Instagram</a> •
+                <a href="{{siteUrl}}">Web</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>

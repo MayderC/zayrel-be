@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ScheduledTasksService } from './scheduled-tasks.service';
-import { Cart, CartSchema, User, UserSchema, Coupon, CouponSchema, Variant, VariantSchema } from '../database/schemas';
+import { Cart, CartSchema, User, UserSchema, Coupon, CouponSchema, Variant, VariantSchema, Quote, QuoteSchema } from '../database/schemas';
 import { MailModule } from '../mail/mail.module';
 
 /**
@@ -20,6 +20,7 @@ import { MailModule } from '../mail/mail.module';
             { name: User.name, schema: UserSchema },
             { name: Coupon.name, schema: CouponSchema },
             { name: Variant.name, schema: VariantSchema },
+            { name: Quote.name, schema: QuoteSchema },
         ]),
         MailModule,
     ],

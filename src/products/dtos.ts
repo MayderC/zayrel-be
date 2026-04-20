@@ -104,6 +104,14 @@ export class CreateVariantDto {
   @IsOptional()
   @IsString()
   imageUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  canvasImageFront?: string; // Flat PNG for editor canvas - front view
+
+  @IsOptional()
+  @IsString()
+  canvasImageBack?: string;  // Flat PNG for editor canvas - back view
 }
 
 export class EditVariantDto {
@@ -142,6 +150,14 @@ export class EditVariantDto {
   @IsOptional()
   @IsString()
   imageUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  canvasImageFront?: string; // Flat PNG for editor canvas - front view
+
+  @IsOptional()
+  @IsString()
+  canvasImageBack?: string;  // Flat PNG for editor canvas - back view
 }
 
 export class CreateListingDto {

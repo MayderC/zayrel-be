@@ -447,4 +447,134 @@ export class MailService {
             html,
         });
     }
+
+    // ==================== QUOTE NOTIFICATIONS ====================
+
+    /**
+     * Send confirmation to client when they submit a quote request
+     */
+    async sendQuoteReceived(quote: any, user: any): Promise<void> {
+        const customerEmail = user?.email;
+        if (!customerEmail) return;
+
+        const quoteNumber = quote._id.toString().slice(-8).toUpperCase();
+        const customerName = user.firstname ? `${user.firstname} ${user.lastname || ''}`.trim() : 'Cliente';
+
+        const html = this.templateService.render('quote-received', {
+            ...this.getCommonTemplateVars(),
+            email: customerEmail,
+            customerName,
+            quoteNumber,
+            quotesUrl: `${this.storeUrl}/store/quotes`,
+        });
+
+        await this.sendMail({
+            to: customerEmail,
+            subject: `📋 Cotización #${quoteNumber} recibida - ${this.brandName}`,
+            html,
+        });
+    }
+
+    /**
+     * Send priced quote to client so they can accept or reject
+     */
+    async sendQuotePriced(quote: any, user: any): Promise<void> {
+        const customerEmail = user?.email;
+        if (!customerEmail) return;
+
+        const quoteNumber = quote._id.toString().slice(-8).toUpperCase();
+        const customerName = user.firstname ? `${user.firstname} ${user.lastname || ''}`.trim() : 'Cliente';
+
+        const html = this.templateService.render('quote-priced', {
+            ...this.getCommonTemplateVars(),
+            email: customerEmail,
+            customerName,
+            quoteNumber,
+            quotedPrice: quote.quotedPrice,
+            priceNotes: quote.priceNotes,
+            expiresAt: quote.expiresAt ? new Date(quote.expiresAt).toLocaleDateString('es-CR') : null,
+            quoteUrl: `${this.storeUrl}/store/quotes`,
+        });
+
+        await this.sendMail({
+            to: customerEmail,
+            subject: `💰 Tu cotización #${quoteNumber} está lista - ${this.brandName}`,
+            html,
+        });
+    }
+
+    /**
+     * Notify admin when client accepts a quote
+     */
+    async sendQuoteAccepted(quote: any, adminEmail: string): Promise<void> {
+        const quoteNumber = quote._id.toString().slice(-8).toUpperCase();
+        const customerName = (quote.user as any)?.firstname
+            ? `${(quote.user as any).firstname} ${(quote.user as any).lastname || ''}`.trim()
+            : 'Cliente';
+
+        const html = this.templateService.render('quote-accepted', {
+            ...this.getCommonTemplateVars(),
+            email: adminEmail,
+            customerName,
+            quoteNumber,
+            quotedPrice: quote.quotedPrice,
+            dashboardUrl: `${this.siteUrl}/dashboard/quotes`,
+        });
+
+        await this.sendMail({
+            to: adminEmail,
+            subject: `✅ Cliente aceptó cotización #${quoteNumber} - ${this.brandName}`,
+            html,
+        });
+    }
+
+    /**
+     * Notify admin when client rejects a quote
+     */
+    async sendQuoteRejected(quote: any, adminEmail: string): Promise<void> {
+        const quoteNumber = quote._id.toString().slice(-8).toUpperCase();
+        const customerName = (quote.user as any)?.firstname
+            ? `${(quote.user as any).firstname} ${(quote.user as any).lastname || ''}`.trim()
+            : 'Cliente';
+
+        const html = this.templateService.render('quote-rejected', {
+            ...this.getCommonTemplateVars(),
+            email: adminEmail,
+            customerName,
+            quoteNumber,
+            rejectionReason: quote.rejectionReason,
+            dashboardUrl: `${this.siteUrl}/dashboard/quotes`,
+        });
+
+        await this.sendMail({
+            to: adminEmail,
+            subject: `❌ Cliente rechazó cotización #${quoteNumber} - ${this.brandName}`,
+            html,
+        });
+    }
+
+    /**
+     * Notify client when their quote has expired
+     */
+    async sendQuoteExpired(quote: any, user: any): Promise<void> {
+        const customerEmail = user?.email;
+        if (!customerEmail) return;
+
+        const quoteNumber = quote._id.toString().slice(-8).toUpperCase();
+        const customerName = user.firstname ? `${user.firstname} ${user.lastname || ''}`.trim() : 'Cliente';
+
+        const html = this.templateService.render('quote-expired', {
+            ...this.getCommonTemplateVars(),
+            email: customerEmail,
+            customerName,
+            quoteNumber,
+            appUrl: `${this.siteUrl}/app`,
+        });
+
+        await this.sendMail({
+            to: customerEmail,
+            subject: `⏰ Tu cotización #${quoteNumber} venció - ${this.brandName}`,
+            html,
+        });
+    }
 }

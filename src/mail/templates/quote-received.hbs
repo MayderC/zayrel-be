@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cotización Recibida - ZayrelStudio</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f5f5; }
+        .container { max-width: 600px; margin: 0 auto; background: #ffffff; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px; text-align: center; }
+        .header h1 { color: #fff; font-size: 28px; margin-bottom: 10px; }
+        .header p { color: rgba(255,255,255,0.9); font-size: 16px; }
+        .content { padding: 40px; }
+        .greeting { font-size: 22px; color: #333; margin-bottom: 20px; }
+        .message { color: #555; font-size: 16px; line-height: 1.8; margin-bottom: 25px; }
+        .info-box { background: #ede9fe; border-left: 4px solid #7c3aed; padding: 20px; margin: 25px 0; border-radius: 4px; }
+        .info-box p { color: #4c1d95; font-size: 14px; }
+        .cta-button { display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff !important; text-decoration: none; padding: 16px 40px; border-radius: 30px; font-weight: 600; font-size: 16px; margin: 20px 0; }
+        .footer { background: #2d3748; color: #a0aec0; padding: 30px; text-align: center; font-size: 13px; }
+        .footer a { color: #3b82f6; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📋 Cotización Recibida</h1>
+            <p>Revisaremos tu diseño pronto</p>
+        </div>
+        <div class="content">
+            <h2 class="greeting">Hola {{customerName}},</h2>
+            <p class="message">
+                Recibimos tu solicitud de cotización para tu diseño personalizado. Nuestro equipo revisará
+                los detalles y te enviará el precio estimado a la brevedad.
+            </p>
+            <div class="info-box">
+                <p>📋 <strong>Cotización #{{quoteNumber}}</strong> — En revisión</p>
+            </div>
+            <p class="message">
+                Una vez que hayamos valorado tu diseño, recibirás un email con el precio. Podrás aceptar
+                o rechazar la cotización desde tu cuenta.
+            </p>
+            <div style="text-align: center; margin-top: 30px;">
+                <a href="{{quotesUrl}}" class="cta-button">Ver mis cotizaciones</a>
+            </div>
+            <p style="color: #333; font-size: 16px; margin-top: 30px;">
+                ¡Gracias por elegirnos!<br>
+                <strong>El equipo de {{brandName}}</strong>
+            </p>
+        </div>
+        <div class="footer">
+            <p>© {{year}} {{brandName}}. Todos los derechos reservados.</p>
+            <p style="margin-top: 10px;">
+                <a href="{{instagramUrl}}">Instagram</a> •
+                <a href="{{siteUrl}}">Web</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>

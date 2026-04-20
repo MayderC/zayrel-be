@@ -1,4 +1,4 @@
-import { Controller, Post, Put, Delete, Get, Body, Param, UseGuards, Query } from '@nestjs/common';
+import { Controller, Post, Put, Patch, Delete, Get, Body, Param, UseGuards, Query } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import {
   CreateProductDto,
@@ -88,6 +88,14 @@ export class ProductsController {
   @Roles(Role.Admin)
   @Put('variants/:id')
   editVariant(@Param('id') variantId: string, @Body() variantDto: EditVariantDto) {
+    return this.productsService.editVariant(variantId, variantDto);
+  }
+
+  // PATCH alias for partial updates (canvas images, stock, etc.)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.Admin)
+  @Patch('variants/:id')
+  patchVariant(@Param('id') variantId: string, @Body() variantDto: EditVariantDto) {
     return this.productsService.editVariant(variantId, variantDto);
   }
 

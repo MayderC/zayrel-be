@@ -26,6 +26,8 @@ export class User {
   @Prop({ default: false }) isBanned: boolean; // true if user is banned
   @Prop({ default: false }) isDeleted: boolean; // true if user is deleted
   @Prop({ default: 4 }) vtoTokens: number; // Virtual Try-On tokens (4 free, +5 per purchase)
+  @Prop() phone?: string;
+  @Prop() telegram?: string;
 
   @Prop({
     type: [{
@@ -210,6 +212,11 @@ export class Variant {
   // Variant-specific image (optional - falls back to product images if not set)
   @Prop() imageUrl?: string;
 
+  // Canvas templates: flat transparent PNGs used in the 2D editor
+  // These are DIFFERENT from product listing photos (which may have models/shadows)
+  @Prop() canvasImageFront?: string; // URL to flat front PNG for the editor canvas
+  @Prop() canvasImageBack?: string;  // URL to flat back PNG for the editor canvas
+
   // Inventory Enhancements
   @Prop({ unique: true, sparse: true }) sku?: string; // Stock Keeping Unit
   @Prop({ default: 0 }) costPrice?: number; // Cost price for profit calculation
@@ -236,6 +243,24 @@ export class Image {
   @Prop({ type: Types.ObjectId, ref: User.name, required: true }) uploadedBy: Types.ObjectId;
 }
 export const ImageSchema = SchemaFactory.createForClass(Image);
+
+// -----------------------------
+// LIBRARY DESIGN (Managed designs for editor)
+// -----------------------------
+export type LibraryDesignDocument = LibraryDesign & Document;
+@Schema({ timestamps: true, collection: 'library_designs' })
+export class LibraryDesign {
+  @Prop({ required: true }) name: string;
+  @Prop({ required: true }) url: string;
+  @Prop({ required: true }) publicId: string;
+  @Prop({ default: 0 }) price: number; // In Colones (CRC)
+  @Prop({ default: 'Regular', enum: ['Logo', 'Regular', 'Full'] }) sizeCategory: string;
+  @Prop({ type: [String], default: [] }) tags: string[];
+  @Prop() width?: number;
+  @Prop() height?: number;
+  @Prop() format?: string;
+}
+export const LibraryDesignSchema = SchemaFactory.createForClass(LibraryDesign);
 
 // -----------------------------
 // PRODUCT (Base and User-generated)
@@ -463,3 +488,75 @@ export class StockLog {
   @Prop({ type: Types.ObjectId, ref: User.name, required: true }) userId: Types.ObjectId;
 }
 export const StockLogSchema = SchemaFactory.createForClass(StockLog);
+
+// -----------------------------
+// QUOTE
+// -----------------------------
+// Represents a custom design quote request from a client.
+export type QuoteDocument = Quote & Document;
+@Schema({ timestamps: true, collection: 'quotes' })
+export class Quote {
+  @Prop({ type: Types.ObjectId, ref: User.name, required: false })
+  user?: Types.ObjectId;
+
+  @Prop({ type: Types.ObjectId, ref: Variant.name, required: true })
+  variantId: Types.ObjectId;
+
+  @Prop({ required: true, min: 1 })
+  quantity: number;
+
+  @Prop({ required: true })
+  designState: string;
+
+  @Prop({ type: [String], default: [] })
+  designImageUrls: string[];
+  
+  @Prop()
+  guestName?: string;
+
+  @Prop()
+  guestEmail?: string;
+
+  @Prop()
+  guestPhone?: string;
+
+  @Prop()
+  guestTelegram?: string;
+
+  @Prop()
+  preferredContactMethod?: string; // 'email', 'phone', 'telegram'
+
+  @Prop()
+  estimatedPrice?: number; // In Colones (CRC)
+
+  @Prop()
+  garmentId?: string;
+
+  @Prop()
+  shirtColor?: string;
+
+  @Prop({ type: Number, default: null })
+  quotedPrice?: number;
+
+  @Prop()
+  priceNotes?: string;
+
+  @Prop()
+  clientNotes?: string;
+
+  @Prop()
+  rejectionReason?: string;
+
+  @Prop({
+    default: 'pending',
+    enum: ['pending', 'sent', 'accepted', 'rejected', 'converted', 'expired'],
+  })
+  status: string;
+
+  @Prop({ type: Date, default: null }) sentAt?: Date;
+  @Prop({ type: Date, default: null }) respondedAt?: Date;
+  @Prop({ type: Date, default: null }) expiresAt?: Date;
+  @Prop({ type: Types.ObjectId, ref: Order.name, default: null })
+  convertedToOrderId?: Types.ObjectId;
+}
+export const QuoteSchema = SchemaFactory.createForClass(Quote);

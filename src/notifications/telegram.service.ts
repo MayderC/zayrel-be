@@ -424,4 +424,52 @@ export class TelegramService {
             this.logger.error(`Failed to send message: ${error.message}`);
         }
     }
+
+    /**
+     * Send quote notification with design preview image to admin group.
+     * Uses TELEGRAM_TOPIC_QUOTES env variable so it doesn't mix with orders.
+     */
+    async sendQuoteNotification(caption: string, photoUrl: string, buttons: any[][]): Promise<void> {
+        if (!this.botToken || !this.groupChatId) return;
+
+        const topicId = this.configService.get<string>('TELEGRAM_TOPIC_QUOTES');
+
+        try {
+            await axios.post(`${this.baseUrl}/sendPhoto`, {
+                chat_id: this.groupChatId,
+                photo: photoUrl,
+                caption,
+                parse_mode: 'HTML',
+                message_thread_id: topicId || undefined,
+                reply_markup: { inline_keyboard: buttons },
+            });
+            this.logger.log('📸 Quote notification with photo sent to Telegram');
+        } catch (error) {
+            // Fallback: if photo fails (e.g. base64/expired URL), send as text
+            this.logger.warn(`Photo send failed, falling back to text: ${error.message}`);
+            await this.sendQuoteTextNotification(caption, buttons);
+        }
+    }
+
+    /**
+     * Send quote notification as text only (fallback when no image/URL is available).
+     */
+    async sendQuoteTextNotification(text: string, buttons: any[][]): Promise<void> {
+        if (!this.botToken || !this.groupChatId) return;
+
+        const topicId = this.configService.get<string>('TELEGRAM_TOPIC_QUOTES');
+
+        try {
+            await axios.post(`${this.baseUrl}/sendMessage`, {
+                chat_id: this.groupChatId,
+                text,
+                parse_mode: 'HTML',
+                message_thread_id: topicId || undefined,
+                reply_markup: { inline_keyboard: buttons },
+            });
+            this.logger.log('📋 Quote text notification sent to Telegram');
+        } catch (error) {
+            this.logger.error(`Failed to send quote text notification: ${error.message}`);
+        }
+    }
 }

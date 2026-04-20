@@ -15,6 +15,8 @@ import { PaymentModule } from './payments/payment.module';
 import { ReportsModule } from './reports/reports.module';
 import { ScheduledTasksModule } from './scheduled-tasks/scheduled-tasks.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { QuotesModule } from './quotes/quotes.module';
+import { SeedModule } from './seed/seed.module';
 
 @Module({
   imports: [
@@ -36,6 +38,8 @@ import { DashboardModule } from './dashboard/dashboard.module';
     ReportsModule,
     ScheduledTasksModule,
     DashboardModule,
+    QuotesModule,
+    SeedModule,
   ],
   controllers: [],
   providers: [],

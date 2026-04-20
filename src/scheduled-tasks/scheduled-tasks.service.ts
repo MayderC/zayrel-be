@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { Cart, CartDocument, User, UserDocument, Coupon, CouponDocument, Variant, VariantDocument } from '../database/schemas';
+import { Cart, CartDocument, User, UserDocument, Coupon, CouponDocument, Variant, VariantDocument, Quote, QuoteDocument } from '../database/schemas';
 import { MailService } from '../mail/mail.service';
 
 interface CartItemForEmail {
@@ -31,6 +31,7 @@ export class ScheduledTasksService {
         @InjectModel(User.name) private userModel: Model<UserDocument>,
         @InjectModel(Coupon.name) private couponModel: Model<CouponDocument>,
         @InjectModel(Variant.name) private variantModel: Model<VariantDocument>,
+        @InjectModel(Quote.name) private quoteModel: Model<QuoteDocument>,
         private readonly mailService: MailService,
     ) { }
 
@@ -175,5 +176,40 @@ export class ScheduledTasksService {
         }
 
         return couponCode;
+    }
+
+    /**
+     * Expire pending quotes every day at 8 AM
+     * Quotes in 'sent' status that have passed their expiresAt date are marked 'expired'
+     */
+    @Cron(CronExpression.EVERY_DAY_AT_8AM)
+    async handleExpiredQuotes() {
+        this.logger.log('🔄 Running quote expiration check...');
+
+        try {
+            const expired = await this.quoteModel
+                .find({ status: 'sent', expiresAt: { $lt: new Date() } })
+                .populate({ path: 'user', select: 'firstname lastname email' });
+
+            if (expired.length === 0) {
+                this.logger.log('No expired quotes found');
+                return;
+            }
+
+            this.logger.log(`Found ${expired.length} expired quotes`);
+
+            for (const quote of expired) {
+                quote.status = 'expired';
+                await quote.save();
+
+                this.mailService.sendQuoteExpired(quote, quote.user as any).catch((err) => {
+                    this.logger.error(`Failed to send expiry email for quote ${quote._id}`, err);
+                });
+            }
+
+            this.logger.log(`✅ Expired ${expired.length} quotes`);
+        } catch (err) {
+            this.logger.error('Error during quote expiration task', err);
+        }
     }
 }

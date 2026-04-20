@@ -221,3 +221,72 @@ ${statusEmoji} <b>Orden #${shortOrderId}</b> - ${statusLabel}
 
     return message;
 }
+
+// ============================================
+// QUOTE NOTIFICATION TEMPLATES
+// ============================================
+
+interface NewQuoteMessageParams {
+    shortQuoteId: string;
+    customerName: string;
+    customerEmail: string;
+    customerPhone?: string;
+    customerTelegram?: string;
+    productName: string;
+    sizeName: string;
+    colorName: string;
+    quantity: number;
+    clientNotes?: string;
+    preferredContactMethod: string;
+    estimatedPrice?: number;
+    dashboardUrl: string;
+}
+
+/**
+ * Buttons for quote notifications.
+ * Opens dashboard directly - no approve/reject here, price is set in the admin.
+ */
+export const QUOTE_BUTTONS = {
+    viewInDashboard: (quoteId: string, dashboardUrl: string) => [
+        [
+            { text: '💰 Ver Cotización en Dashboard', url: `${dashboardUrl}/dashboard/quotes/${quoteId}` }
+        ]
+    ],
+};
+
+/**
+ * Generates the Telegram message for a new custom design quote request
+ */
+export function buildNewQuoteMessage({
+    shortQuoteId,
+    customerName,
+    customerEmail,
+    customerPhone,
+    customerTelegram,
+    productName,
+    sizeName,
+    colorName,
+    quantity,
+    clientNotes,
+    preferredContactMethod,
+    estimatedPrice,
+    dashboardUrl,
+}: NewQuoteMessageParams): string {
+    return `
+🎨 <b>Nueva Solicitud de Diseño Personalizado</b>
+
+<b>Cotización:</b> #${shortQuoteId}
+<b>👤 Cliente:</b> ${customerName}
+<b>📧 Email:</b> ${customerEmail}${customerPhone ? `\n<b>📱 Tel:</b> ${customerPhone}` : ''}${customerTelegram ? `\n<b>🆔 Telegram:</b> @${customerTelegram.replace('@', '')}` : ''}
+<b>🎯 Preferencia:</b> ${preferredContactMethod.toUpperCase()}
+${estimatedPrice ? `<b>💰 Precio Est.:</b> ₡${estimatedPrice.toLocaleString('es-CR')}` : ''}
+
+<b>👕 Prenda:</b> ${productName}
+<b>📐 Talla:</b> ${sizeName}
+<b>🎨 Color:</b> ${colorName}
+<b>🔢 Cantidad:</b> ${quantity} unidad${quantity > 1 ? 'es' : ''}
+${clientNotes ? `\n<b>📝 Nota del cliente:</b> ${clientNotes}` : ''}
+
+<i>Abre el dashboard para ver el diseño completo y asignar precio.</i>
+    `.trim();
+}

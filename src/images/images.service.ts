@@ -43,18 +43,8 @@ export class ImagesService {
             throw new BadRequestException('Maximum 5 images per product');
         }
 
-        // Upload to Cloudinary
-        const uploadResult = await this.uploadToCloudinary(file, `products/${productId}`);
-
-        // Create image record in DB
-        const image = await this.imageModel.create({
-            url: uploadResult.secure_url,
-            filename: uploadResult.public_id,
-            type: 'product',
-            width: uploadResult.width,
-            height: uploadResult.height,
-            uploadedBy: new Types.ObjectId(uploadedBy),
-        });
+        // Upload to Cloudinary using generic method
+        const image = await this.uploadImage(file, `products/${productId}`, 'product', uploadedBy);
 
         // Add image to product
         await this.productModel.findByIdAndUpdate(productId, {
@@ -62,6 +52,29 @@ export class ImagesService {
         });
 
         return image;
+    }
+
+    /**
+     * Generic upload to Cloudinary and DB
+     */
+    async uploadImage(
+        file: UploadedFile,
+        folder: string,
+        type: string,
+        uploadedBy: string,
+    ): Promise<ImageDocument> {
+        // Upload to Cloudinary
+        const uploadResult = await this.uploadToCloudinary(file, folder);
+
+        // Create image record in DB
+        return await this.imageModel.create({
+            url: uploadResult.secure_url,
+            filename: uploadResult.public_id,
+            type: type,
+            width: uploadResult.width,
+            height: uploadResult.height,
+            uploadedBy: new Types.ObjectId(uploadedBy),
+        });
     }
 
     /**

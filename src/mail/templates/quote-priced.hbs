@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tu Cotización está Lista - ZayrelStudio</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f5f5; }
+        .container { max-width: 600px; margin: 0 auto; background: #ffffff; }
+        .header { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); padding: 40px; text-align: center; }
+        .header h1 { color: #fff; font-size: 28px; margin-bottom: 10px; }
+        .header p { color: rgba(255,255,255,0.9); font-size: 16px; }
+        .content { padding: 40px; }
+        .greeting { font-size: 22px; color: #333; margin-bottom: 20px; }
+        .message { color: #555; font-size: 16px; line-height: 1.8; margin-bottom: 25px; }
+        .price-box { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 25px; margin: 25px 0; border-radius: 4px; text-align: center; }
+        .price-box .price { font-size: 36px; font-weight: 700; color: #92400e; }
+        .price-box .label { font-size: 14px; color: #78350f; margin-top: 5px; }
+        .notes-box { background: #f0f9ff; border-left: 4px solid #0ea5e9; padding: 15px 20px; margin: 20px 0; border-radius: 4px; }
+        .notes-box p { color: #0c4a6e; font-size: 14px; }
+        .warning-box { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px 20px; margin: 20px 0; border-radius: 4px; }
+        .warning-box p { color: #78350f; font-size: 14px; }
+        .actions { display: flex; gap: 15px; justify-content: center; margin: 30px 0; flex-wrap: wrap; }
+        .cta-button { display: inline-block; background: linear-gradient(135deg, #059669 0%, #047857 100%); color: #fff !important; text-decoration: none; padding: 16px 32px; border-radius: 30px; font-weight: 600; font-size: 16px; }
+        .footer { background: #2d3748; color: #a0aec0; padding: 30px; text-align: center; font-size: 13px; }
+        .footer a { color: #3b82f6; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💰 Tu Cotización está Lista</h1>
+            <p>Revisá el precio y confirmá tu pedido</p>
+        </div>
+        <div class="content">
+            <h2 class="greeting">Hola {{customerName}},</h2>
+            <p class="message">
+                Revisamos tu diseño personalizado y tenemos una cotización para vos. Aquí está el detalle:
+            </p>
+            <div class="price-box">
+                <div class="label">Cotización #{{quoteNumber}}</div>
+                <div class="price">₡{{quotedPrice}}</div>
+                <div class="label">Precio estimado para tu diseño</div>
+            </div>
+            {{#if priceNotes}}
+            <div class="notes-box">
+                <p>📝 <strong>Nota del equipo:</strong> {{priceNotes}}</p>
+            </div>
+            {{/if}}
+            {{#if expiresAt}}
+            <div class="warning-box">
+                <p>⏰ Esta cotización es válida hasta el <strong>{{expiresAt}}</strong>. Pasada esa fecha vence automáticamente.</p>
+            </div>
+            {{/if}}
+            <p class="message">
+                Podés aceptar o rechazar esta cotización desde tu cuenta. Si aceptás, nuestro equipo
+                creará tu orden y podrás proceder con el pago.
+            </p>
+            <div class="actions">
+                <a href="{{quoteUrl}}" class="cta-button">Ver cotización</a>
+            </div>
+            <p style="color: #333; font-size: 16px; margin-top: 30px;">
+                ¡Gracias por elegirnos!<br>
+                <strong>El equipo de {{brandName}}</strong>
+            </p>
+        </div>
+        <div class="footer">
+            <p>© {{year}} {{brandName}}. Todos los derechos reservados.</p>
+            <p style="margin-top: 10px;">
+                <a href="{{instagramUrl}}">Instagram</a> •
+                <a href="{{siteUrl}}">Web</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>

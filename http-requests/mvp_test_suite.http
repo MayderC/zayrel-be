@@ -1,0 +1,218 @@
+@api = http://localhost:3001
+@admin_email = admin@zayrel.com
+@admin_password = AdminPassword123!
+@user_email = user@test.com
+@user_password = UserPassword123!
+@guest_email = guest@test.com
+
+# ==========================================
+# 1. AUTHENTICATION & SETUP
+# ==========================================
+
+### 1.1 Register New User
+POST {{api}}/auth/register
+Content-Type: application/json
+
+{
+    "email": "{{user_email}}",
+    "password": "{{user_password}}",
+    "firstname": "Test",
+    "lastname": "User"
+}
+
+### 1.2 Login User & Get Token
+# @name userLogin
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "{{user_email}}",
+    "password": "{{user_password}}"
+}
+
+@userToken = {{userLogin.response.body.accessToken}}
+
+### 1.3 Login Admin (Assuming seeded or created manually)
+# @name adminLogin
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "{{admin_email}}",
+    "password": "{{admin_password}}"
+}
+
+@adminToken = {{adminLogin.response.body.accessToken}}
+
+# ==========================================
+# 2. PRODUCT MANAGEMENT (Admin Only)
+# ==========================================
+
+### 2.1 Create Category
+POST {{api}}/products/categories
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+    "name": "Camisetas",
+    "slug": "camisetas",
+    "description": "Camisetas de alta calidad"
+}
+
+### 2.2 Create Product
+# @name createProduct
+POST {{api}}/products
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+    "name": "Camiseta Test MVP",
+    "description": "Una camiseta para probar el flujo MVP",
+    "categoryId": "camisetas",
+    "basePrice": 15000,
+    "slug": "camiseta-test-mvp"
+}
+
+@productId = {{createProduct.response.body._id}}
+
+### 2.3 Create Variant (Color/Size)
+# @name createVariant
+POST {{api}}/products/variants
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+    "productId": "{{productId}}",
+    "sku": "TSHIRT-BLK-M-001",
+    "price": 15000,
+    "stock": 100,
+    "attributes": {
+        "color": "Negro",
+        "size": "M"
+    }
+}
+
+@variantId = {{createVariant.response.body._id}}
+
+### 2.4 Create Public Listing
+# @name createListing
+POST {{api}}/products/listings
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+    "productId": "{{productId}}",
+    "title": "Camiseta Oversize Básica",
+    "slug": "camiseta-oversize-basica-mvp",
+    "price": 15000,
+    "isActive": true
+}
+
+# ==========================================
+# 3. GUEST CHECKOUT FLOW
+# ==========================================
+
+### 3.1 Create Order (Guest)
+# @name createGuestOrder
+POST {{api}}/orders
+Content-Type: application/json
+
+{
+    "guestInfo": {
+        "name": "Guest Customer",
+        "email": "{{guest_email}}",
+        "contact": "88888888"
+    },
+    "shippingAddress": {
+        "street": "Calle Principal 123",
+        "city": "San José",
+        "state": "San José",
+        "country": "Costa Rica",
+        "phone": "88888888"
+    },
+    "items": [
+        {
+            "variantId": "{{variantId}}",
+            "quantity": 1
+        }
+    ],
+    "paymentMethod": "manual"
+}
+
+@guestOrderId = {{createGuestOrder.response.body._id}}
+
+### 3.2 Initiate Payment (Guest - Manual)
+# CRITICAL CHECK: This currently fails if endpoint requires Auth
+POST {{api}}/payments/initiate
+Content-Type: application/json
+
+{
+    "orderId": "{{guestOrderId}}",
+    "method": "manual"
+}
+
+# ==========================================
+# 4. AUTHENTICATED USER CHECKOUT FLOW
+# ==========================================
+
+### 4.1 Create Order (User)
+# @name createUserOrder
+POST {{api}}/orders
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+    "shippingAddress": {
+        "street": "Calle User 456",
+        "city": "Heredia",
+        "state": "Heredia",
+        "country": "Costa Rica",
+        "phone": "77777777"
+    },
+    "items": [
+        {
+            "variantId": "{{variantId}}",
+            "quantity": 2
+        }
+    ],
+    "paymentMethod": "onvopay"
+}
+
+@userOrderId = {{createUserOrder.response.body._id}}
+
+### 4.2 Initiate Payment (User - Onvopay)
+POST {{api}}/payments/initiate
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+    "orderId": "{{userOrderId}}",
+    "method": "onvopay",
+    "successUrl": "http://localhost:3000/store/success",
+    "cancelUrl": "http://localhost:3000/store/checkout"
+}
+
+# ==========================================
+# 5. ORDER MANAGEMENT
+# ==========================================
+
+### 5.1 Get My Orders (User)
+GET {{api}}/orders/mine
+Authorization: Bearer {{userToken}}
+
+### 5.2 Get Order Details (User Owner)
+GET {{api}}/orders/{{userOrderId}}
+Authorization: Bearer {{userToken}}
+
+### 5.3 Admin List Orders
+GET {{api}}/orders
+Authorization: Bearer {{adminToken}}
+
+### 5.4 Update Order Status (Admin)
+PATCH {{api}}/orders/{{userOrderId}}/status
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+    "status": "enviada"
+}
