@@ -23,6 +23,7 @@ import {
   Category,
   CategoryDocument,
 } from '../database/schemas';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 
 @Injectable()
 export class ProductsService {
@@ -245,6 +246,27 @@ export class ProductsService {
     return await this.colorModel.find().exec();
   }
 
+  async editColor(colorId: string, colorDto: any) {
+    const color = await this.colorModel.findByIdAndUpdate(colorId, colorDto, { new: true });
+    if (!color) throw new NotFoundException('Color no encontrado');
+    return color;
+  }
+
+  async deleteColor(colorId: string) {
+    const color = await this.colorModel.findById(colorId);
+    if (!color) throw new NotFoundException('Color no encontrado');
+
+    const usageCount = await this.variantModel.countDocuments({ color: colorId });
+    if (usageCount > 0) {
+      throw new BadRequestException(
+        `No se puede eliminar: ${usageCount} variante(s) usan este color.`
+      );
+    }
+
+    await this.colorModel.findByIdAndDelete(colorId);
+    return { message: 'Color eliminado correctamente' };
+  }
+
   // --- SIZES ---
   async createSize(sizeDto: any) {
     const size = new this.sizeModel(sizeDto);
@@ -255,10 +277,35 @@ export class ProductsService {
     return await this.sizeModel.find().exec();
   }
 
+  async editSize(sizeId: string, sizeDto: any) {
+    const size = await this.sizeModel.findByIdAndUpdate(sizeId, sizeDto, { new: true });
+    if (!size) throw new NotFoundException('Talla no encontrada');
+    return size;
+  }
+
+  async deleteSize(sizeId: string) {
+    const size = await this.sizeModel.findById(sizeId);
+    if (!size) throw new NotFoundException('Talla no encontrada');
+
+    const variantUsage = await this.variantModel.countDocuments({ size: sizeId });
+    const measurementUsage = await this.productModel.countDocuments({ 'sizeMeasurements.size': sizeId });
+
+    if (variantUsage > 0 || measurementUsage > 0) {
+      const parts: string[] = [];
+      if (variantUsage > 0) parts.push(`${variantUsage} variante(s)`);
+      if (measurementUsage > 0) parts.push(`${measurementUsage} producto(s) con medidas`);
+      throw new BadRequestException(
+        `No se puede eliminar: ${parts.join(' y ')} usan esta talla.`
+      );
+    }
+
+    await this.sizeModel.findByIdAndDelete(sizeId);
+    return { message: 'Talla eliminada correctamente' };
+  }
+
   // --- CATEGORIES ---
   async createCategory(categoryDto: any) {
     if (!categoryDto.slug) {
-      // Simple slugify fallback
       categoryDto.slug = categoryDto.name.toLowerCase().replace(/ /g, '-');
     }
     const category = new this.categoryModel(categoryDto);
@@ -267,6 +314,27 @@ export class ProductsService {
 
   async listCategories() {
     return await this.categoryModel.find().populate('parentCategory').exec();
+  }
+
+  async editCategory(categoryId: string, categoryDto: any) {
+    const category = await this.categoryModel.findByIdAndUpdate(categoryId, categoryDto, { new: true });
+    if (!category) throw new NotFoundException('Categoría no encontrada');
+    return category;
+  }
+
+  async deleteCategory(categoryId: string) {
+    const category = await this.categoryModel.findById(categoryId);
+    if (!category) throw new NotFoundException('Categoría no encontrada');
+
+    const usageCount = await this.productListingModel.countDocuments({ category: categoryId });
+    if (usageCount > 0) {
+      throw new BadRequestException(
+        `No se puede eliminar: ${usageCount} producto(s) en catálogo usan esta categoría.`
+      );
+    }
+
+    await this.categoryModel.findByIdAndDelete(categoryId);
+    return { message: 'Categoría eliminada correctamente' };
   }
 
   // --- UNIQUE PRODUCT (from inventory) ---

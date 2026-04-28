@@ -8,8 +8,11 @@ import {
   CreateListingDto,
   EditListingDto,
   CreateColorDto,
+  EditColorDto,
   CreateSizeDto,
+  EditSizeDto,
   CreateCategoryDto,
+  EditCategoryDto,
   CreateUniqueProductDto,
 } from './dtos';
 import { BadRequestException, ConflictException, NotFoundException, InternalServerErrorException } from '@nestjs/common';
@@ -160,6 +163,20 @@ export class ProductsController {
     return this.productsService.listColors();
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.Admin)
+  @Put('colors/:id')
+  editColor(@Param('id') id: string, @Body() dto: EditColorDto) {
+    return this.productsService.editColor(id, dto);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.Admin)
+  @Delete('colors/:id')
+  deleteColor(@Param('id') id: string) {
+    return this.productsService.deleteColor(id);
+  }
+
   // SIZES
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.Admin)
@@ -173,6 +190,20 @@ export class ProductsController {
     return this.productsService.listSizes();
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.Admin)
+  @Put('sizes/:id')
+  editSize(@Param('id') id: string, @Body() dto: EditSizeDto) {
+    return this.productsService.editSize(id, dto);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.Admin)
+  @Delete('sizes/:id')
+  deleteSize(@Param('id') id: string) {
+    return this.productsService.deleteSize(id);
+  }
+
   // CATEGORIES
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.Admin)
@@ -184,6 +215,20 @@ export class ProductsController {
   @Get('categories')
   listCategories() {
     return this.productsService.listCategories();
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.Admin)
+  @Put('categories/:id')
+  editCategory(@Param('id') id: string, @Body() dto: EditCategoryDto) {
+    return this.productsService.editCategory(id, dto);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.Admin)
+  @Delete('categories/:id')
+  deleteCategory(@Param('id') id: string) {
+    return this.productsService.deleteCategory(id);
   }
 
   // Search endpoint (must be before dynamic :idOrSlug route)

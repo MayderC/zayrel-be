@@ -241,14 +241,56 @@ export class CreateColorDto {
   hex: string;
 }
 
+export class EditColorDto {
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @IsOptional()
+  @IsString()
+  hex?: string;
+}
+
 export class CreateSizeDto {
   @IsString()
   name: string;
 }
 
+export class EditSizeDto {
+  @IsOptional()
+  @IsString()
+  name?: string;
+}
+
 export class CreateCategoryDto {
   @IsString()
   name: string;
+
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @IsOptional()
+  @IsString()
+  slug?: string;
+
+  @IsOptional()
+  @IsMongoId()
+  parentCategory?: string;
+
+  @IsOptional()
+  @IsString()
+  icon?: string;
+
+  @IsOptional()
+  @IsString()
+  color?: string;
+}
+
+export class EditCategoryDto {
+  @IsOptional()
+  @IsString()
+  name?: string;
 
   @IsOptional()
   @IsString()
