@@ -18,6 +18,16 @@ export class CreateDesignDto {
     @IsArray()
     @IsString({ each: true })
     tags?: string[];
+
+    @IsOptional()
+    @Type(() => Number)
+    @IsNumber()
+    widthCm?: number;
+
+    @IsOptional()
+    @Type(() => Number)
+    @IsNumber()
+    heightCm?: number;
 }
 
 export class UpdateDesignDto {
@@ -37,4 +47,12 @@ export class UpdateDesignDto {
     @IsArray()
     @IsString({ each: true })
     tags?: string[];
+
+    @IsOptional()
+    @IsNumber()
+    widthCm?: number;
+
+    @IsOptional()
+    @IsNumber()
+    heightCm?: number;
 }

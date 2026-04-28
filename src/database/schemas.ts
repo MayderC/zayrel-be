@@ -258,6 +258,8 @@ export class LibraryDesign {
   @Prop({ type: [String], default: [] }) tags: string[];
   @Prop() width?: number;
   @Prop() height?: number;
+  @Prop() widthCm?: number;
+  @Prop() heightCm?: number;
   @Prop() format?: string;
 }
 export const LibraryDesignSchema = SchemaFactory.createForClass(LibraryDesign);
