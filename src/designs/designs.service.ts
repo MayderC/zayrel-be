@@ -54,9 +54,12 @@ export class DesignsService {
         return design;
     }
 
+    async findAllTags(): Promise<string[]> {
+        return await this.designModel.distinct('tags').exec();
+    }
+
     async remove(id: string): Promise<void> {
-        const design = await this.findOne(id);
-        // We might want to remove from Cloudinary too, but usually it's better to keep assets
+        await this.findOne(id);
         await this.designModel.findByIdAndDelete(id).exec();
     }
 }

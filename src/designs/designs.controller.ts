@@ -45,6 +45,11 @@ export class DesignsController {
         return await this.designsService.findAll({ tag, search });
     }
 
+    @Get('tags')
+    async findAllTags() {
+        return await this.designsService.findAllTags();
+    }
+
     @Get(':id')
     async findOne(@Param('id') id: string) {
         return await this.designsService.findOne(id);
