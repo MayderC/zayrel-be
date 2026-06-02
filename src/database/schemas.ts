@@ -29,6 +29,11 @@ export class User {
   @Prop() phone?: string;
   @Prop() telegram?: string;
 
+  // --- Zayrel Plaza (minigame) ---
+  @Prop({ default: 0 }) zaycoins: number;           // Moneda virtual ganada jugando
+  @Prop({ type: String, default: null }) activeAvatarSkin?: string; // SKU de camiseta equipada
+  @Prop({ default: false }) isStarSeller: boolean;  // Halo dorado: comprador frecuente
+
   @Prop({
     type: [{
       label: { type: String }, // e.g., 'Home', 'Office'
