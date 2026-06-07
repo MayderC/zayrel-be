@@ -153,11 +153,19 @@ export class EditVariantDto {
 
   @IsOptional()
   @IsString()
-  canvasImageFront?: string; // Flat PNG for editor canvas - front view
+  canvasImageFront?: string;
 
   @IsOptional()
   @IsString()
-  canvasImageBack?: string;  // Flat PNG for editor canvas - back view
+  canvasImageBack?: string;
+
+  @IsOptional()
+  @IsString()
+  displacementMapFront?: string;
+
+  @IsOptional()
+  @IsString()
+  displacementMapBack?: string;
 }
 
 export class CreateListingDto {

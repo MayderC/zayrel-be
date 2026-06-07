@@ -219,8 +219,12 @@ export class Variant {
 
   // Canvas templates: flat transparent PNGs used in the 2D editor
   // These are DIFFERENT from product listing photos (which may have models/shadows)
-  @Prop() canvasImageFront?: string; // URL to flat front PNG for the editor canvas
-  @Prop() canvasImageBack?: string;  // URL to flat back PNG for the editor canvas
+  @Prop() canvasImageFront?: string;
+  @Prop() canvasImageBack?: string;
+
+  // Displacement maps: grayscale PNGs for fabric-fold warp effect in the editor
+  @Prop() displacementMapFront?: string;
+  @Prop() displacementMapBack?: string;
 
   // Inventory Enhancements
   @Prop({ unique: true, sparse: true }) sku?: string; // Stock Keeping Unit
