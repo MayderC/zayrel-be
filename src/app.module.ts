@@ -17,7 +17,7 @@ import { ScheduledTasksModule } from './scheduled-tasks/scheduled-tasks.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { QuotesModule } from './quotes/quotes.module';
 import { SeedModule } from './seed/seed.module';
-import { GameModule } from './game/game.module';
+// import { GameModule } from './game/game.module';
 
 @Module({
   imports: [
@@ -41,7 +41,7 @@ import { GameModule } from './game/game.module';
     DashboardModule,
     QuotesModule,
     SeedModule,
-    GameModule,
+    // GameModule,
   ],
   controllers: [],
   providers: [],

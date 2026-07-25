@@ -7,7 +7,7 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy';
 import { UsersModule } from '../users/users.module';
-import { PasswordResetToken, PasswordResetTokenSchema, MagicLinkToken, MagicLinkTokenSchema } from '../database/schemas';
+import { PasswordResetToken, PasswordResetTokenSchema, MagicLinkToken, MagicLinkTokenSchema, EmailVerificationToken, EmailVerificationTokenSchema } from '../database/schemas';
 
 @Module({
   imports: [
@@ -16,6 +16,7 @@ import { PasswordResetToken, PasswordResetTokenSchema, MagicLinkToken, MagicLink
     MongooseModule.forFeature([
       { name: PasswordResetToken.name, schema: PasswordResetTokenSchema },
       { name: MagicLinkToken.name, schema: MagicLinkTokenSchema },
+      { name: EmailVerificationToken.name, schema: EmailVerificationTokenSchema },
     ]),
     JwtModule.registerAsync({
       imports: [ConfigModule],

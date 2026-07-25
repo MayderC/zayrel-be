@@ -105,6 +105,27 @@ export class MagicLinkToken {
 export const MagicLinkTokenSchema = SchemaFactory.createForClass(MagicLinkToken);
 
 // -----------------------------
+// EMAIL VERIFICATION TOKEN
+// -----------------------------
+export type EmailVerificationTokenDocument = EmailVerificationToken & Document;
+
+@Schema({ timestamps: true, collection: 'email_verification_tokens' })
+export class EmailVerificationToken {
+  @Prop({ required: true, type: Types.ObjectId, ref: 'User' })
+  userId: Types.ObjectId;
+
+  @Prop({ required: true, unique: true })
+  token: string;
+
+  @Prop({ required: true })
+  expiresAt: Date;
+
+  @Prop({ default: false })
+  isUsed: boolean;
+}
+export const EmailVerificationTokenSchema = SchemaFactory.createForClass(EmailVerificationToken);
+
+// -----------------------------
 // CART ITEM (Embedded)
 // -----------------------------
 export class CartItem {

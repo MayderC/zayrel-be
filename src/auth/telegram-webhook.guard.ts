@@ -19,16 +19,11 @@ export class TelegramWebhookGuard implements CanActivate {
         this.secretToken = this.configService.get<string>('TELEGRAM_WEBHOOK_SECRET') || '';
 
         if (!this.secretToken) {
-            this.logger.warn('⚠️ TELEGRAM_WEBHOOK_SECRET not configured - webhook endpoint is unprotected!');
+            this.logger.error('⚠️ TELEGRAM_WEBHOOK_SECRET not configured - all webhook requests will be rejected');
         }
     }
 
     canActivate(context: ExecutionContext): boolean {
-        // If no secret configured, allow all (for backwards compatibility during setup)
-        if (!this.secretToken) {
-            return true;
-        }
-
         const request = context.switchToHttp().getRequest<Request>();
         const headerToken = request.headers['x-telegram-bot-api-secret-token'] as string;
 
