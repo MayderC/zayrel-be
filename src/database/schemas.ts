@@ -1,4 +1,4 @@
-import { Prop, Schema, SchemaFactory, raw } from '@nestjs/mongoose';
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 
 /**
@@ -285,7 +285,9 @@ export class LibraryDesign {
   @Prop({ required: true }) publicId: string;
   @Prop({ default: 0 }) price: number; // In Colones (CRC)
   @Prop({ default: 'Regular', enum: ['Logo', 'Regular', 'Full'] }) sizeCategory: string;
+  @Prop() category?: string;
   @Prop({ type: [String], default: [] }) tags: string[];
+  @Prop({ type: [{ type: Types.ObjectId, ref: 'LibraryDesign' }], default: [] }) relatedDesignIds: Types.ObjectId[];
   @Prop() width?: number;
   @Prop() height?: number;
   @Prop() widthCm?: number;
