@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { json, urlencoded } from 'express';
+import { IoAdapter } from '@nestjs/platform-socket.io';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -9,6 +10,9 @@ async function bootstrap() {
   // Increase payload limit for Base64 images
   app.use(json({ limit: '10mb' }));
   app.use(urlencoded({ extended: true, limit: '10mb' }));
+
+  // Habilitar Socket.IO adapter (requerido para WebSocket gateways)
+  app.useWebSocketAdapter(new IoAdapter(app));
 
   // Enable CORS - origins from env (comma-separated) or default to localhost
   const corsOrigins = process.env.CORS_ORIGINS

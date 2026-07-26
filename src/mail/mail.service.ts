@@ -148,6 +148,25 @@ export class MailService {
     }
 
     /**
+     * Send email verification email
+     */
+    async sendEmailVerification(user: { email: string; name: string }, verifyUrl: string): Promise<void> {
+        const html = this.templateService.render('email-verification', {
+            ...this.getCommonTemplateVars(),
+            name: user.name,
+            email: user.email,
+            verifyUrl,
+            expiresIn: '48 horas',
+        });
+
+        await this.sendMail({
+            to: user.email,
+            subject: `✅ Verifica tu email - ${this.brandName}`,
+            html,
+        });
+    }
+
+    /**
      * Send a custom email using a specific template
      */
     async sendWithTemplate(

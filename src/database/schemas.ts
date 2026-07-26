@@ -1,4 +1,4 @@
-import { Prop, Schema, SchemaFactory, raw } from '@nestjs/mongoose';
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 
 /**
@@ -28,6 +28,11 @@ export class User {
   @Prop({ default: 4 }) vtoTokens: number; // Virtual Try-On tokens (4 free, +5 per purchase)
   @Prop() phone?: string;
   @Prop() telegram?: string;
+
+  // --- Zayrel Plaza (minigame) ---
+  @Prop({ default: 0 }) zaycoins: number;           // Moneda virtual ganada jugando
+  @Prop({ type: String, default: null }) activeAvatarSkin?: string; // SKU de camiseta equipada
+  @Prop({ default: false }) isStarSeller: boolean;  // Halo dorado: comprador frecuente
 
   @Prop({
     type: [{
@@ -98,6 +103,27 @@ export class MagicLinkToken {
   isUsed: boolean; // true = already used (one-time use)
 }
 export const MagicLinkTokenSchema = SchemaFactory.createForClass(MagicLinkToken);
+
+// -----------------------------
+// EMAIL VERIFICATION TOKEN
+// -----------------------------
+export type EmailVerificationTokenDocument = EmailVerificationToken & Document;
+
+@Schema({ timestamps: true, collection: 'email_verification_tokens' })
+export class EmailVerificationToken {
+  @Prop({ required: true, type: Types.ObjectId, ref: 'User' })
+  userId: Types.ObjectId;
+
+  @Prop({ required: true, unique: true })
+  token: string;
+
+  @Prop({ required: true })
+  expiresAt: Date;
+
+  @Prop({ default: false })
+  isUsed: boolean;
+}
+export const EmailVerificationTokenSchema = SchemaFactory.createForClass(EmailVerificationToken);
 
 // -----------------------------
 // CART ITEM (Embedded)
@@ -214,8 +240,12 @@ export class Variant {
 
   // Canvas templates: flat transparent PNGs used in the 2D editor
   // These are DIFFERENT from product listing photos (which may have models/shadows)
-  @Prop() canvasImageFront?: string; // URL to flat front PNG for the editor canvas
-  @Prop() canvasImageBack?: string;  // URL to flat back PNG for the editor canvas
+  @Prop() canvasImageFront?: string;
+  @Prop() canvasImageBack?: string;
+
+  // Displacement maps: grayscale PNGs for fabric-fold warp effect in the editor
+  @Prop() displacementMapFront?: string;
+  @Prop() displacementMapBack?: string;
 
   // Inventory Enhancements
   @Prop({ unique: true, sparse: true }) sku?: string; // Stock Keeping Unit
@@ -255,7 +285,9 @@ export class LibraryDesign {
   @Prop({ required: true }) publicId: string;
   @Prop({ default: 0 }) price: number; // In Colones (CRC)
   @Prop({ default: 'Regular', enum: ['Logo', 'Regular', 'Full'] }) sizeCategory: string;
+  @Prop() category?: string;
   @Prop({ type: [String], default: [] }) tags: string[];
+  @Prop({ type: [{ type: Types.ObjectId, ref: 'LibraryDesign' }], default: [] }) relatedDesignIds: Types.ObjectId[];
   @Prop() width?: number;
   @Prop() height?: number;
   @Prop() widthCm?: number;

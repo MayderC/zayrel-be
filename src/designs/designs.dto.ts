@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsNumber, IsArray } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsNumber, IsArray, IsMongoId } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateDesignDto {
@@ -13,6 +13,10 @@ export class CreateDesignDto {
     @IsString()
     @IsNotEmpty()
     sizeCategory: string; // 'Logo', 'Regular', 'Full'
+
+    @IsOptional()
+    @IsString()
+    category?: string;
 
     @IsOptional()
     @IsArray()
@@ -44,9 +48,18 @@ export class UpdateDesignDto {
     sizeCategory?: string;
 
     @IsOptional()
+    @IsString()
+    category?: string;
+
+    @IsOptional()
     @IsArray()
     @IsString({ each: true })
     tags?: string[];
+
+    @IsOptional()
+    @IsArray()
+    @IsMongoId({ each: true })
+    relatedDesignIds?: string[];
 
     @IsOptional()
     @IsNumber()
@@ -55,4 +68,10 @@ export class UpdateDesignDto {
     @IsOptional()
     @IsNumber()
     heightCm?: number;
+}
+
+export class UpdateRelatedDesignsDto {
+    @IsArray()
+    @IsMongoId({ each: true })
+    relatedDesignIds: string[];
 }

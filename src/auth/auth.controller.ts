@@ -118,4 +118,30 @@ export class AuthController {
     }
     return this.authService.verifyMagicLink(token);
   }
+
+  /**
+   * Verify email with token
+   * GET /auth/verify-email?token=xxx
+   */
+  @Get('verify-email')
+  @HttpCode(HttpStatus.OK)
+  async verifyEmail(@Query('token') token: string): Promise<{ message: string }> {
+    if (!token) {
+      throw new BadRequestException('Token es requerido');
+    }
+    return this.authService.verifyEmail(token);
+  }
+
+  /**
+   * Resend verification email
+   * POST /auth/resend-verification
+   */
+  @Post('resend-verification')
+  @HttpCode(HttpStatus.OK)
+  async resendVerification(@Body('email') email: string): Promise<{ message: string }> {
+    if (!email) {
+      throw new BadRequestException('Email es requerido');
+    }
+    return this.authService.resendVerification(email);
+  }
 }

@@ -12,7 +12,7 @@ import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 import { UsersService } from '../users/users.service';
 import { MailService } from '../mail/mail.service';
-import { PasswordResetToken, PasswordResetTokenDocument, MagicLinkToken, MagicLinkTokenDocument } from '../database/schemas';
+import { PasswordResetToken, PasswordResetTokenDocument, MagicLinkToken, MagicLinkTokenDocument, EmailVerificationToken, EmailVerificationTokenDocument } from '../database/schemas';
 import {
   LoginDto,
   RegisterDto,
@@ -40,6 +40,8 @@ export class AuthService {
     private passwordResetTokenModel: Model<PasswordResetTokenDocument>,
     @InjectModel(MagicLinkToken.name)
     private magicLinkTokenModel: Model<MagicLinkTokenDocument>,
+    @InjectModel(EmailVerificationToken.name)
+    private emailVerificationTokenModel: Model<EmailVerificationTokenDocument>,
   ) { }
 
   async register(registerDto: RegisterDto): Promise<AuthResponseDto> {
@@ -63,7 +65,15 @@ export class AuthService {
         })
         .catch(error => {
           console.error('[REGISTER] Error sending welcome email:', error.message);
-          // Try fallback provider is already handled in mailService
+        });
+
+      // Send verification email (non-blocking, separate from magic link)
+      this.sendVerificationEmail(user._id, user.email, user.firstname)
+        .then(() => {
+          console.log('[REGISTER] Verification email sent to:', user.email);
+        })
+        .catch(error => {
+          console.error('[REGISTER] Error sending verification email:', error.message);
         });
 
       // Generar tokens
@@ -186,7 +196,7 @@ export class AuthService {
 
     // Build reset URL
     const frontendUrl = this.configService.get<string>('FRONTEND_URL', 'http://localhost:3000');
-    const resetUrl = `${frontendUrl}/reset-password?token=${rawToken}`;
+    const resetUrl = `${frontendUrl}/auth/reset-password?token=${rawToken}`;
 
     // Send password reset email
     try {
@@ -371,5 +381,73 @@ export class AuthService {
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
     };
+  }
+
+  /**
+   * Send verification email to a user
+   */
+  async sendVerificationEmail(userId: string, email: string, firstname: string): Promise<void> {
+    await this.emailVerificationTokenModel.deleteMany({ userId });
+
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
+
+    await this.emailVerificationTokenModel.create({
+      userId,
+      token: hashedToken,
+      expiresAt: new Date(Date.now() + 48 * 60 * 60 * 1000),
+    });
+
+    const frontendUrl = this.configService.get<string>('FRONTEND_URL', 'http://localhost:3000');
+    const verifyUrl = `${frontendUrl}/auth/verify-email?token=${rawToken}`;
+
+    try {
+      await this.mailService.sendEmailVerification({ email, name: firstname }, verifyUrl);
+    } catch (error) {
+      console.error('[VERIFY EMAIL] Failed to send:', error.message);
+      console.log('[VERIFY EMAIL] Verification URL:', verifyUrl);
+    }
+  }
+
+  /**
+   * Verify a user's email using the token from the email
+   */
+  async verifyEmail(token: string): Promise<{ message: string }> {
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+    const tokenDoc = await this.emailVerificationTokenModel.findOne({
+      token: hashedToken,
+      expiresAt: { $gt: new Date() },
+      isUsed: false,
+    });
+
+    if (!tokenDoc) {
+      throw new BadRequestException('El enlace de verificación es inválido o ha expirado');
+    }
+
+    await this.usersService.update(tokenDoc.userId.toString(), { isEmailVerified: true });
+
+    await this.emailVerificationTokenModel.findByIdAndUpdate(tokenDoc._id, { isUsed: true });
+
+    return { message: 'Email verificado exitosamente' };
+  }
+
+  /**
+   * Resend verification email
+   */
+  async resendVerification(email: string): Promise<{ message: string }> {
+    const user = await this.usersService.findByEmail(email);
+
+    if (!user) {
+      return { message: 'Si el email existe, se enviará un nuevo enlace de verificación' };
+    }
+
+    if (user.isEmailVerified) {
+      return { message: 'Este email ya está verificado' };
+    }
+
+    await this.sendVerificationEmail((user as any)._id.toString(), user.email, user.firstname);
+
+    return { message: 'Si el email existe, se enviará un nuevo enlace de verificación' };
   }
 }
