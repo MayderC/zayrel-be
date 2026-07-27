@@ -103,12 +103,15 @@ export class ProductsService {
 
   // Method to find a product by Slug (with variants)
   async findProductBySlug(slug: string) {
+    console.log('[ProductsService] findProductBySlug looking for slug:', slug);
     const product = await this.productModel
       .findOne({ slug })
       .populate('images')
       .populate('sizeMeasurements.size')
       .exec();
 
+    console.log('[ProductsService] findProductBySlug product found:', !!product, product ? `(name: ${product.name})` : '');
+    
     if (!product) {
       return null;
     }
@@ -119,6 +122,8 @@ export class ProductsService {
       .populate('size')
       .populate('color')
       .exec();
+
+    console.log('[ProductsService] findProductBySlug variants count:', variants.length);
 
     // Return product with variants
     return {
