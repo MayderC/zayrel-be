@@ -239,9 +239,7 @@ export class ProductsController {
 
   @Get('slug/:slug')
   async getProductBySlug(@Param('slug') slug: string) {
-    console.log('[ProductsController] GET /slug/:slug called with:', slug);
     const product = await this.productsService.findProductBySlug(slug);
-    console.log('[ProductsController] GET /slug/:slug result:', product ? `found (${product.name})` : 'NOT FOUND');
     if (!product) {
       throw new NotFoundException('Producto no encontrado');
     }
@@ -251,15 +249,11 @@ export class ProductsController {
   // Dynamic route must be LAST to avoid capturing other routes
   @Get(':idOrSlug')
   async getProduct(@Param('idOrSlug') idOrSlug: string) {
-    console.log('[ProductsController] GET /:idOrSlug called with:', idOrSlug);
     // Check if it's a valid ObjectId, otherwise treat as slug
     const isObjectId = /^[0-9a-fA-F]{24}$/.test(idOrSlug);
-    console.log('[ProductsController] isObjectId:', isObjectId);
     if (isObjectId) {
       return this.productsService.findProductById(idOrSlug);
     }
-    const result = await this.productsService.findProductBySlug(idOrSlug);
-    console.log('[ProductsController] GET /:idOrSlug result:', result ? `found (${result.name})` : 'NOT FOUND');
-    return result;
+    return this.productsService.findProductBySlug(idOrSlug);
   }
 }
