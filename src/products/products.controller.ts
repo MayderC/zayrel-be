@@ -237,6 +237,15 @@ export class ProductsController {
     return this.productsService.searchListings(query);
   }
 
+  @Get('slug/:slug')
+  async getProductBySlug(@Param('slug') slug: string) {
+    const product = await this.productsService.findProductBySlug(slug);
+    if (!product) {
+      throw new NotFoundException('Producto no encontrado');
+    }
+    return product;
+  }
+
   // Dynamic route must be LAST to avoid capturing other routes
   @Get(':idOrSlug')
   async getProduct(@Param('idOrSlug') idOrSlug: string) {
