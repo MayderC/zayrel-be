@@ -153,6 +153,13 @@ export class NotificationsService {
             // Don't throw - notification failure shouldn't block order creation
         }
 
+        // Telegram notification to admin (Esperando Pago topic)
+        try {
+            await this.telegramService.notifyStatusChange(order, 'esperando_pago');
+        } catch (error) {
+            this.logger.error(`Failed to send Telegram new order notification: ${error.message}`);
+        }
+
         // WhatsApp notification (optional)
         const customerPhone = order.guestInfo?.contact || order.shippingAddress?.phone;
         if (customerPhone) {

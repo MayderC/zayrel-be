@@ -13,6 +13,7 @@
  * Maps order status to the corresponding Telegram topic environment variable
  */
 export const STATUS_TO_TOPIC_ENV: Record<string, string> = {
+    'esperando_pago': 'TELEGRAM_TOPIC_ESPERANDO_PAGO',
     'pagada': 'TELEGRAM_TOPIC_PAGADA',
     'rechazada': 'TELEGRAM_TOPIC_REVISION',
     'en_produccion': 'TELEGRAM_TOPIC_EN_PRODUCCION',
@@ -24,6 +25,7 @@ export const STATUS_TO_TOPIC_ENV: Record<string, string> = {
  * Emoji icons for each order status
  */
 export const STATUS_EMOJIS: Record<string, string> = {
+    'esperando_pago': '💳',
     'pagada': '✅',
     'rechazada': '❌',
     'en_produccion': '🛠️',
@@ -35,6 +37,7 @@ export const STATUS_EMOJIS: Record<string, string> = {
  * Human-readable labels for each order status
  */
 export const STATUS_LABELS: Record<string, string> = {
+    'esperando_pago': 'ESPERANDO PAGO',
     'pagada': 'PAGADA',
     'rechazada': 'RECHAZADA',
     'en_produccion': 'EN PRODUCCIÓN',
@@ -46,6 +49,7 @@ export const STATUS_LABELS: Record<string, string> = {
  * Next workflow step buttons for each status
  */
 export const WORKFLOW_NEXT_STEPS: Record<string, { text: string; action: string } | null> = {
+    'esperando_pago': null,
     'pagada': { text: '🛠️ Mover a Producción', action: 'move_produccion' },
     'en_produccion': { text: '🚀 Marcar como Enviada', action: 'move_enviada' },
     'enviada': { text: '📦 Marcar Completada', action: 'move_completada' },
@@ -110,6 +114,7 @@ export function getWhatsAppStatusMessage(
     { customerName, shortOrderId, trackingNumber }: WhatsAppTemplateParams
 ): string {
     const templates: Record<string, string> = {
+        'esperando_pago': `Hola ${customerName}! 🛍️\n\nHemos recibido tu pedido #${shortOrderId}.\n\nRealiza el pago y sube tu comprobante para comenzar la producción.`,
         'pagada': `Hola ${customerName}! 🎨\n\nTu pago fue aprobado ✅ Pronto comenzamos con la producción de tu orden #${shortOrderId}.\n\n¡Gracias por tu compra!`,
         'rechazada': `Hola ${customerName},\n\nHubo un problema con tu pago para la orden #${shortOrderId}.\n\nPor favor contáctanos para más información.`,
         'en_produccion': `Hola ${customerName}! 🛠️\n\nTu orden #${shortOrderId} ya está en producción.\n\nTe avisaremos cuando esté lista para envío.`,
