@@ -23,7 +23,7 @@ import {
   Category,
   CategoryDocument,
 } from '../database/schemas';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException, ConflictException } from '@nestjs/common';
 
 @Injectable()
 export class ProductsService {
@@ -134,20 +134,68 @@ export class ProductsService {
     // Convert string IDs to ObjectId
     const { Types } = require('mongoose');
 
+    const productOid = new Types.ObjectId(productId);
+    const colorOid = new Types.ObjectId(color);
+    const sizeOid = new Types.ObjectId(size);
+
+    // Check for duplicate combination
+    const existing = await this.variantModel.findOne({
+      product: productOid,
+      color: colorOid,
+      size: sizeOid,
+    });
+    if (existing) {
+      throw new BadRequestException('Ya existe una variante con esa combinación de color y talla');
+    }
+
     const variant = new this.variantModel({
       ...rest,
-      product: new Types.ObjectId(productId),
-      color: new Types.ObjectId(color),
-      size: new Types.ObjectId(size),
+      product: productOid,
+      color: colorOid,
+      size: sizeOid,
     });
-    return await variant.save();
+    try {
+      return await variant.save();
+    } catch (err) {
+      if (err.code === 11000) {
+        throw new ConflictException('Ya existe una variante con esa combinación de color y talla');
+      }
+      throw err;
+    }
   }
 
   // Method to edit a variant
   async editVariant(variantId: string, variantDto: EditVariantDto) {
-    return await this.variantModel.findByIdAndUpdate(variantId, variantDto, {
-      new: true,
-    });
+    const { Types } = require('mongoose');
+
+    // If color or size is changing, check for duplicate
+    if (variantDto.color || variantDto.size) {
+      const current = await this.variantModel.findById(variantId);
+      if (current) {
+        const newColor = variantDto.color ? new Types.ObjectId(variantDto.color) : current.color;
+        const newSize = variantDto.size ? new Types.ObjectId(variantDto.size) : current.size;
+        const existing = await this.variantModel.findOne({
+          _id: { $ne: new Types.ObjectId(variantId) },
+          product: current.product,
+          color: newColor,
+          size: newSize,
+        });
+        if (existing) {
+          throw new BadRequestException('Ya existe una variante con esa combinación de color y talla');
+        }
+      }
+    }
+
+    try {
+      return await this.variantModel.findByIdAndUpdate(variantId, variantDto, {
+        new: true,
+      });
+    } catch (err) {
+      if (err.code === 11000) {
+        throw new ConflictException('Ya existe una variante con esa combinación de color y talla');
+      }
+      throw err;
+    }
   }
 
   // Method to delete a variant

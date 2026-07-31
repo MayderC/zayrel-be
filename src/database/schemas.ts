@@ -254,6 +254,7 @@ export class Variant {
   @Prop() location?: string; // Warehouse location
 }
 export const VariantSchema = SchemaFactory.createForClass(Variant);
+VariantSchema.index({ product: 1, color: 1, size: 1 }, { unique: true });
 
 // -----------------------------
 // IMAGE (Design assets and product photos)
