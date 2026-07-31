@@ -440,6 +440,18 @@ export class ProductsService {
     return listing?.category || null;
   }
 
+  async getListingsByCategory(categoryId: string) {
+    const listings = await this.productListingModel
+      .find({ category: categoryId, isActive: true })
+      .populate({
+        path: 'variant',
+        populate: [{ path: 'product' }, { path: 'color' }, { path: 'size' }],
+      })
+      .populate('category')
+      .exec();
+    return listings;
+  }
+
   // --- UNIQUE PRODUCT (from inventory) ---
   async createUniqueProduct(dto: any) {
     const { Types } = require('mongoose');

@@ -150,6 +150,11 @@ export class ProductsController {
     return this.productsService.removeProductFromCategory(productId);
   }
 
+  @Get('listings/by-category/:categoryId')
+  getListingsByCategory(@Param('categoryId') categoryId: string) {
+    return this.productsService.getListingsByCategory(categoryId);
+  }
+
   @Get('listings/product-category/:productId')
   getProductCategory(@Param('productId') productId: string) {
     return this.productsService.getProductCategory(productId);
