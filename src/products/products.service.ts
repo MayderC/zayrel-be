@@ -364,6 +364,10 @@ export class ProductsService {
     return await this.categoryModel.find().populate('parentCategory').exec();
   }
 
+  async findCategoryBySlug(slug: string) {
+    return await this.categoryModel.findOne({ slug: slug.toLowerCase() });
+  }
+
   async editCategory(categoryId: string, categoryDto: any) {
     const category = await this.categoryModel.findByIdAndUpdate(categoryId, categoryDto, { new: true });
     if (!category) throw new NotFoundException('Categoría no encontrada');
@@ -383,6 +387,57 @@ export class ProductsService {
 
     await this.categoryModel.findByIdAndDelete(categoryId);
     return { message: 'Categoría eliminada correctamente' };
+  }
+
+  async assignProductToCategory(productId: string, categoryId: string) {
+    const { Types } = require('mongoose');
+    const productOid = new Types.ObjectId(productId);
+    const catOid = new Types.ObjectId(categoryId);
+
+    const variants = await this.variantModel.find({ product: productOid }).exec();
+    if (!variants.length) {
+      throw new BadRequestException('El producto no tiene variantes');
+    }
+
+    await this.productListingModel.deleteMany({
+      variant: { $in: variants.map(v => v._id) },
+      category: { $ne: null },
+    });
+
+    const listings = variants.map(v => ({
+      variant: v._id,
+      category: catOid,
+      isActive: true,
+    }));
+    await this.productListingModel.insertMany(listings);
+
+    return { message: `Producto asignado a la categoría (${variants.length} variantes)` };
+  }
+
+  async removeProductFromCategory(productId: string) {
+    const { Types } = require('mongoose');
+    const productOid = new Types.ObjectId(productId);
+
+    const variants = await this.variantModel.find({ product: productOid }).exec();
+    const result = await this.productListingModel.deleteMany({
+      variant: { $in: variants.map(v => v._id) },
+      category: { $ne: null },
+    });
+
+    return { message: `Producto removido de categoría (${result.deletedCount} listings eliminados)` };
+  }
+
+  async getProductCategory(productId: string) {
+    const { Types } = require('mongoose');
+    const productOid = new Types.ObjectId(productId);
+
+    const variants = await this.variantModel.find({ product: productOid }).exec();
+    const listing = await this.productListingModel.findOne({
+      variant: { $in: variants.map(v => v._id) },
+      category: { $ne: null },
+    }).populate('category').exec();
+
+    return listing?.category || null;
   }
 
   // --- UNIQUE PRODUCT (from inventory) ---

@@ -136,14 +136,45 @@ export class ProductsController {
     return this.productsService.deleteListing(listingId);
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.Admin)
+  @Post('listings/assign')
+  assignProductToCategory(@Body() body: { productId: string; categoryId: string }) {
+    return this.productsService.assignProductToCategory(body.productId, body.categoryId);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.Admin)
+  @Delete('listings/for-product/:productId')
+  removeProductFromCategory(@Param('productId') productId: string) {
+    return this.productsService.removeProductFromCategory(productId);
+  }
+
+  @Get('listings/product-category/:productId')
+  getProductCategory(@Param('productId') productId: string) {
+    return this.productsService.getProductCategory(productId);
+  }
+
   @Get('listings')
-  listListings(@Query() query: any) {
-    const filters: any = { isActive: true }; // Always return only active listings
+  async listListings(@Query() query: any) {
+    const filters: any = { isActive: true };
 
     if (query.featured === 'true') filters.featured = true;
     if (query.isNewArrival === 'true') filters.isNewArrival = true;
     if (query.isBestSeller === 'true') filters.isBestSeller = true;
-    if (query.category) filters.category = query.category;
+    if (query.category) {
+      const { Types } = require('mongoose');
+      if (Types.ObjectId.isValid(query.category)) {
+        filters.category = new Types.ObjectId(query.category);
+      } else {
+        const cat = await this.productsService.findCategoryBySlug(query.category);
+        if (cat) {
+          filters.category = cat._id;
+        } else {
+          return [];
+        }
+      }
+    }
 
     return this.productsService.listListings(filters);
   }
