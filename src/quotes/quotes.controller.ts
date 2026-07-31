@@ -40,6 +40,21 @@ export class QuotesController {
         return this.quotesService.findMyQuotes(req.user._id);
     }
 
+    @Get('public/:referenceId')
+    getByReference(@Param('referenceId') referenceId: string) {
+        return this.quotesService.getByReference(referenceId);
+    }
+
+    @Patch('public/:referenceId/accept')
+    acceptByReference(@Param('referenceId') referenceId: string) {
+        return this.quotesService.acceptByReference(referenceId);
+    }
+
+    @Patch('public/:referenceId/reject')
+    rejectByReference(@Param('referenceId') referenceId: string, @Body() dto: RejectQuoteDto) {
+        return this.quotesService.rejectByReference(referenceId, dto.rejectionReason);
+    }
+
     @Get(':id')
     @UseGuards(JwtAuthGuard)
     findOne(@Param('id') id: string) {

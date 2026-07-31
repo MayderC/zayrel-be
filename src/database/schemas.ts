@@ -593,5 +593,8 @@ export class Quote {
   @Prop({ type: Date, default: null }) expiresAt?: Date;
   @Prop({ type: Types.ObjectId, ref: Order.name, default: null })
   convertedToOrderId?: Types.ObjectId;
+
+  @Prop({ unique: true, sparse: true })
+  referenceId?: string;
 }
 export const QuoteSchema = SchemaFactory.createForClass(Quote);

@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
+import * as crypto from 'crypto';
 import { Quote, QuoteDocument, Variant, VariantDocument, Product, ProductDocument, User, UserDocument } from '../database/schemas';
 import { CreateQuoteDto, PriceQuoteDto, RejectQuoteDto } from './quotes.dto';
 import { MailService } from '../mail/mail.service';
@@ -55,6 +56,7 @@ export class QuotesService {
             shirtColor: dto.shirtColor,
             clientNotes: dto.clientNotes,
             status: 'pending',
+            referenceId: await this.generateUniqueReference(),
         };
 
         if (user) {
@@ -320,5 +322,54 @@ export class QuotesService {
                 });
             }
         }
+    }
+
+    private async generateUniqueReference(): Promise<string> {
+        const prefix = 'ZAY';
+        let attempts = 0;
+        while (attempts < 10) {
+            const code = crypto.randomBytes(3).toString('hex').toUpperCase();
+            const referenceId = `${prefix}-${code}`;
+            const exists = await this.quoteModel.findOne({ referenceId });
+            if (!exists) return referenceId;
+            attempts++;
+        }
+        return `${prefix}-${Date.now().toString(36).toUpperCase()}`;
+    }
+
+    async getByReference(referenceId: string) {
+        const quote = await this.quoteModel.findOne({ referenceId })
+            .populate({
+                path: 'variantId',
+                populate: [{ path: 'product' }, { path: 'color' }, { path: 'size' }],
+            })
+            .populate('user', 'firstname lastname email');
+        if (!quote) throw new NotFoundException('Cotización no encontrada');
+        return quote;
+    }
+
+    async acceptByReference(referenceId: string) {
+        const quote = await this.quoteModel.findOne({ referenceId });
+        if (!quote) throw new NotFoundException('Cotización no encontrada');
+        if (quote.status !== 'sent') {
+            throw new BadRequestException('Esta cotización no está disponible para aceptar');
+        }
+        quote.status = 'accepted';
+        quote.respondedAt = new Date();
+        await quote.save();
+        return quote;
+    }
+
+    async rejectByReference(referenceId: string, rejectionReason?: string) {
+        const quote = await this.quoteModel.findOne({ referenceId });
+        if (!quote) throw new NotFoundException('Cotización no encontrada');
+        if (quote.status !== 'sent') {
+            throw new BadRequestException('Esta cotización no está disponible para rechazar');
+        }
+        quote.status = 'rejected';
+        quote.respondedAt = new Date();
+        quote.rejectionReason = rejectionReason;
+        await quote.save();
+        return quote;
     }
 }
