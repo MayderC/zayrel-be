@@ -473,11 +473,12 @@ export class ProductsService {
   async createUniqueProduct(dto: any) {
     const { Types } = require('mongoose');
 
-    // 1. Buscar variante origen con color y size
+    // 1. Buscar variante origen con color, size y producto
     const sourceVariant = await this.variantModel
       .findById(dto.sourceVariantId)
       .populate('color')
       .populate('size')
+      .populate('product')
       .exec();
 
     if (!sourceVariant) {
@@ -509,7 +510,8 @@ export class ProductsService {
       slug: dto.slug,
       description: dto.description || '',
       price: dto.price,
-      images: dto.images || [],
+      // Inherit source product images if none provided
+      images: (dto.images && dto.images.length > 0) ? dto.images : (sourceVariant.product as any)?.images || [],
       isUniqueProduct: true,
     });
     await newProduct.save();
@@ -521,6 +523,9 @@ export class ProductsService {
       size: new Types.ObjectId((sourceVariant.size as any)._id),
       stock: 1,
       isAvailable: true,
+      // Inherit source variant's commercial photos
+      imageUrl: sourceVariant.imageUrl,
+      images: sourceVariant.images,
     });
     await newVariant.save();
 
