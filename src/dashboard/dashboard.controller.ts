@@ -9,27 +9,27 @@ import { SseAuthGuard } from '../auth/sse-auth.guard';
 
 @Controller('dashboard')
 export class DashboardController {
-    constructor(private readonly dashboardService: DashboardService) { }
+  constructor(private readonly dashboardService: DashboardService) {}
 
-    /**
-     * Get current dashboard stats (uses standard JWT auth)
-     */
-    @Get('stats')
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(Role.Admin)
-    async getStats(): Promise<DashboardStats> {
-        return this.dashboardService.getStats();
-    }
+  /**
+   * Get current dashboard stats (uses standard JWT auth)
+   */
+  @Get('stats')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.Admin)
+  async getStats(): Promise<DashboardStats> {
+    return this.dashboardService.getStats();
+  }
 
-    /**
-     * SSE endpoint for real-time stats updates
-     * Uses query param auth since EventSource doesn't support headers
-     * 
-     * Usage: GET /dashboard/events?token=<jwt_token>
-     */
-    @Sse('events')
-    @UseGuards(SseAuthGuard)
-    streamEvents(): Observable<MessageEvent> {
-        return this.dashboardService.getStatsStream();
-    }
+  /**
+   * SSE endpoint for real-time stats updates
+   * Uses query param auth since EventSource doesn't support headers
+   *
+   * Usage: GET /dashboard/events?token=<jwt_token>
+   */
+  @Sse('events')
+  @UseGuards(SseAuthGuard)
+  streamEvents(): Observable<MessageEvent> {
+    return this.dashboardService.getStatsStream();
+  }
 }

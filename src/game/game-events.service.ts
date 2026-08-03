@@ -118,7 +118,9 @@ export class GameEventsService {
       });
 
       this.gateway?.broadcastDropSpawn(mapId, { id: dropId, x, y, reward });
-      this.logger.log(`🎁 Drop ${dropId} spawneado en (${x.toFixed(0)}, ${y.toFixed(0)}) en ${mapId}`);
+      this.logger.log(
+        `🎁 Drop ${dropId} spawneado en (${x.toFixed(0)}, ${y.toFixed(0)}) en ${mapId}`,
+      );
     }, countdownSeconds * 1000);
   }
 }

@@ -50,15 +50,14 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     try {
       // Extraer JWT del handshake (query param o header Authorization)
       const token =
-        (client.handshake.auth?.token as string) ||
-        (client.handshake.query?.token as string);
+        (client.handshake.auth?.token as string) || (client.handshake.query?.token as string);
 
       let userId: string | null = null;
       let username = `Jugador-${Math.floor(Math.random() * 9999)}`;
 
       if (token) {
         try {
-          const payload = this.jwtService.verify(token) as { sub: string; email: string };
+          const payload = this.jwtService.verify(token);
           userId = payload.sub;
           username = payload.email.split('@')[0]; // "cortesdavid381"
         } catch {
@@ -74,7 +73,8 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
       await client.join(`map:${mapId}`);
 
       // Enviar al nuevo jugador el estado actual del mundo
-      const existingPlayers = this.gameService.getPlayersInRoom(mapId)
+      const existingPlayers = this.gameService
+        .getPlayersInRoom(mapId)
         .filter((p) => p.socketId !== client.id)
         .map(this.serializePlayer);
 
@@ -107,12 +107,13 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
   // ---------------------------------------------------------------------------
 
   @SubscribeMessage('player:move')
-  handleMove(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() dto: PlayerMoveDto,
-  ) {
+  handleMove(@ConnectedSocket() client: Socket, @MessageBody() dto: PlayerMoveDto) {
     const player = this.gameService.updatePlayerPosition(
-      client.id, dto.x, dto.y, dto.direction, dto.animation,
+      client.id,
+      dto.x,
+      dto.y,
+      dto.direction,
+      dto.animation,
     );
     if (!player) return;
 
@@ -142,10 +143,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
   // ---------------------------------------------------------------------------
 
   @SubscribeMessage('chat:send')
-  handleChat(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() dto: ChatMessageDto,
-  ) {
+  handleChat(@ConnectedSocket() client: Socket, @MessageBody() dto: ChatMessageDto) {
     const player = this.gameService.getPlayer(client.id);
     if (!player) return;
 
@@ -166,10 +164,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
   // ---------------------------------------------------------------------------
 
   @SubscribeMessage('drop:claim')
-  async handleClaimDrop(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() dto: ClaimDropDto,
-  ) {
+  async handleClaimDrop(@ConnectedSocket() client: Socket, @MessageBody() dto: ClaimDropDto) {
     const player = this.gameService.getPlayer(client.id);
     if (!player) return;
 
@@ -218,7 +213,11 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
     @MessageBody() dto: { questionId: string; answerIndex: number },
   ) {
-    const result = await this.triviaService.submitAnswer(client.id, dto.questionId, dto.answerIndex);
+    const result = await this.triviaService.submitAnswer(
+      client.id,
+      dto.questionId,
+      dto.answerIndex,
+    );
     if (!result) return;
 
     client.emit('game:trivia_answer_result', result);
@@ -250,10 +249,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
   // ---------------------------------------------------------------------------
 
   @SubscribeMessage('avatar:equip_skin')
-  async handleEquipSkin(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() dto: EquipSkinDto,
-  ) {
+  async handleEquipSkin(@ConnectedSocket() client: Socket, @MessageBody() dto: EquipSkinDto) {
     const success = await this.gameService.equipSkin(client.id, dto.sku);
     if (!success) {
       client.emit('avatar:error', { error: 'No podés equipar esa skin' });

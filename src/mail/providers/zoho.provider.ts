@@ -8,22 +8,22 @@ import { EmailProvider, SendMailOptions } from './email-provider.interface';
  */
 @Injectable()
 export class ZohoProvider implements EmailProvider {
-    readonly name = 'zoho';
-    private readonly logger = new Logger(ZohoProvider.name);
+  readonly name = 'zoho';
+  private readonly logger = new Logger(ZohoProvider.name);
 
-    constructor(private readonly mailerService: MailerService) { }
+  constructor(private readonly mailerService: MailerService) {}
 
-    async sendMail(options: SendMailOptions): Promise<void> {
-        this.logger.debug(`Sending email via Zoho SMTP to ${options.to}`);
+  async sendMail(options: SendMailOptions): Promise<void> {
+    this.logger.debug(`Sending email via Zoho SMTP to ${options.to}`);
 
-        await this.mailerService.sendMail({
-            to: options.to,
-            subject: options.subject,
-            html: options.html,
-            from: options.from,
-            text: options.text,
-        });
+    await this.mailerService.sendMail({
+      to: options.to,
+      subject: options.subject,
+      html: options.html,
+      from: options.from,
+      text: options.text,
+    });
 
-        this.logger.log(`✅ Email sent via Zoho to ${options.to}`);
-    }
+    this.logger.log(`✅ Email sent via Zoho to ${options.to}`);
+  }
 }

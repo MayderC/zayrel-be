@@ -32,7 +32,10 @@ export class TriviaService {
   // UNIRSE A SESIÓN
   // ---------------------------------------------------------------------------
 
-  joinSession(socketId: string, username: string): {
+  joinSession(
+    socketId: string,
+    username: string,
+  ): {
     sessionId: string;
     questions: { id: string; question: string; options: string[] }[];
     totalQuestions: number;
@@ -84,7 +87,11 @@ export class TriviaService {
   // RESPONDER PREGUNTA
   // ---------------------------------------------------------------------------
 
-  submitAnswer(socketId: string, questionId: string, answerIndex: number): {
+  submitAnswer(
+    socketId: string,
+    questionId: string,
+    answerIndex: number,
+  ): {
     correct: boolean;
     correctIndex: number;
     score: number;

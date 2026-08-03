@@ -16,7 +16,13 @@ import {
   ParseIntPipe,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
-import { CreateUserDto, UpdateUserDto, UserResponseDto, AddressDto, AddressResponseDto } from './dtos';
+import {
+  CreateUserDto,
+  UpdateUserDto,
+  UserResponseDto,
+  AddressDto,
+  AddressResponseDto,
+} from './dtos';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -24,7 +30,7 @@ import { Role } from '../auth/roles.enum';
 
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) { }
+  constructor(private readonly usersService: UsersService) {}
 
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
@@ -96,7 +102,10 @@ export class UsersController {
   @UseGuards(JwtAuthGuard)
   @Post('me/addresses')
   @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
-  async addMyAddress(@Request() req, @Body() addressDto: AddressDto): Promise<{
+  async addMyAddress(
+    @Request() req,
+    @Body() addressDto: AddressDto,
+  ): Promise<{
     message: string;
     addresses: AddressResponseDto[];
   }> {
@@ -220,7 +229,10 @@ export class UsersController {
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get(':id')
-  async findOne(@Param('id') id: string, @Request() req): Promise<{
+  async findOne(
+    @Param('id') id: string,
+    @Request() req,
+  ): Promise<{
     message: string;
     user: UserResponseDto;
   }> {
@@ -309,4 +321,3 @@ export class UsersController {
     };
   }
 }
-

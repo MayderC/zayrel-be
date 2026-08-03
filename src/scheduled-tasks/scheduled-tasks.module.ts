@@ -2,29 +2,40 @@ import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ScheduledTasksService } from './scheduled-tasks.service';
-import { Cart, CartSchema, User, UserSchema, Coupon, CouponSchema, Variant, VariantSchema, Quote, QuoteSchema } from '../database/schemas';
+import {
+  Cart,
+  CartSchema,
+  User,
+  UserSchema,
+  Coupon,
+  CouponSchema,
+  Variant,
+  VariantSchema,
+  Quote,
+  QuoteSchema,
+} from '../database/schemas';
 import { MailModule } from '../mail/mail.module';
 
 /**
  * Scheduled Tasks Module
- * 
+ *
  * Handles cron jobs and scheduled tasks like:
  * - Abandoned cart email reminders
  * - Periodic cleanup tasks
  */
 @Module({
-    imports: [
-        ScheduleModule.forRoot(),
-        MongooseModule.forFeature([
-            { name: Cart.name, schema: CartSchema },
-            { name: User.name, schema: UserSchema },
-            { name: Coupon.name, schema: CouponSchema },
-            { name: Variant.name, schema: VariantSchema },
-            { name: Quote.name, schema: QuoteSchema },
-        ]),
-        MailModule,
-    ],
-    providers: [ScheduledTasksService],
-    exports: [ScheduledTasksService],
+  imports: [
+    ScheduleModule.forRoot(),
+    MongooseModule.forFeature([
+      { name: Cart.name, schema: CartSchema },
+      { name: User.name, schema: UserSchema },
+      { name: Coupon.name, schema: CouponSchema },
+      { name: Variant.name, schema: VariantSchema },
+      { name: Quote.name, schema: QuoteSchema },
+    ]),
+    MailModule,
+  ],
+  providers: [ScheduledTasksService],
+  exports: [ScheduledTasksService],
 })
-export class ScheduledTasksModule { }
+export class ScheduledTasksModule {}

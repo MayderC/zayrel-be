@@ -103,7 +103,8 @@ export const TRIVIA_QUESTIONS: TriviaQuestion[] = [
     id: 'a-h-001',
     category: 'anime',
     difficulty: 'hard',
-    question: '¿Cuántos episodios tiene la primera temporada original de "Neon Genesis Evangelion"?',
+    question:
+      '¿Cuántos episodios tiene la primera temporada original de "Neon Genesis Evangelion"?',
     options: ['24', '25', '26', '28'],
     correctIndex: 2,
   },

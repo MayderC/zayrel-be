@@ -20,12 +20,7 @@ import { TriviaService } from './minigames/trivia/trivia.service';
       inject: [ConfigService],
     }),
   ],
-  providers: [
-    GameGateway,
-    GameService,
-    GameEventsService,
-    TriviaService,
-  ],
+  providers: [GameGateway, GameService, GameEventsService, TriviaService],
   exports: [GameService, GameEventsService],
 })
 export class GameModule implements OnModuleInit {

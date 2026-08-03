@@ -1,4 +1,3 @@
-
 import { Module, forwardRef } from '@nestjs/common';
 import { PaymentController } from './payment.controller';
 import { PaymentService } from './payment.service';
@@ -10,17 +9,9 @@ import { HttpModule } from '@nestjs/axios';
 import { ConfigModule } from '@nestjs/config';
 
 @Module({
-    imports: [
-        HttpModule,
-        ConfigModule,
-        forwardRef(() => OrdersModule)
-    ],
-    controllers: [PaymentController],
-    providers: [
-        PaymentService,
-        OnvopayStrategy,
-        PaypalStrategy
-    ],
-    exports: [PaymentService]
+  imports: [HttpModule, ConfigModule, forwardRef(() => OrdersModule)],
+  controllers: [PaymentController],
+  providers: [PaymentService, OnvopayStrategy, PaypalStrategy],
+  exports: [PaymentService],
 })
-export class PaymentModule { }
+export class PaymentModule {}

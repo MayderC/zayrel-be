@@ -5,13 +5,13 @@
 
 export interface GamePlayer {
   socketId: string;
-  userId: string | null;   // null = invitado
+  userId: string | null; // null = invitado
   username: string;
   x: number;
   y: number;
   direction: 'down' | 'up' | 'left' | 'right';
   animation: string;
-  activeSkin: string | null;  // SKU de camiseta equipada, null = default
+  activeSkin: string | null; // SKU de camiseta equipada, null = default
   isStarSeller: boolean;
   zaycoins: number;
   mapId: string;
@@ -19,7 +19,7 @@ export interface GamePlayer {
 }
 
 export interface GameRoom {
-  id: string;          // 'plaza' | 'anime-zone' | etc.
+  id: string; // 'plaza' | 'anime-zone' | etc.
   players: Map<string, GamePlayer>; // socketId → player
 }
 
@@ -29,7 +29,7 @@ export interface DropEvent {
   x: number;
   y: number;
   maxClaims: number;
-  claims: string[];    // userIds que ya reclamaron
+  claims: string[]; // userIds que ya reclamaron
   expiresAt: Date;
   reward: DropReward;
 }
@@ -37,7 +37,7 @@ export interface DropEvent {
 export interface DropReward {
   type: 'coupon' | 'zaycoins' | 'design_unlock';
   value: string | number; // código cupón o cantidad de coins
-  label: string;          // "15% de descuento"
+  label: string; // "15% de descuento"
 }
 
 export interface ScavengerCoupon {
@@ -45,11 +45,11 @@ export interface ScavengerCoupon {
   mapId: string;
   x: number;
   y: number;
-  radius: number;       // píxeles de rango de "encuentro"
+  radius: number; // píxeles de rango de "encuentro"
   couponCode: string;
-  discount: string;     // "15%"
+  discount: string; // "15%"
   expiresAt: Date;
-  foundBy: string[];    // socketIds que ya lo encontraron (uno por coupon)
+  foundBy: string[]; // socketIds que ya lo encontraron (uno por coupon)
 }
 
 export interface ZaycoinConfig {
@@ -79,14 +79,14 @@ export interface MapZone {
   id: string;
   type: 'shop' | 'minigame' | 'secret' | 'vip' | 'spawn';
   rect: [number, number, number, number]; // x, y, w, h
-  linkTo?: string;   // URL para zonas tipo 'shop'
+  linkTo?: string; // URL para zonas tipo 'shop'
   minigameId?: string;
 }
 
 export interface MapConfig {
   id: string;
   name: string;
-  jsonUrl: string;   // Ruta al archivo Tiled JSON en /public
+  jsonUrl: string; // Ruta al archivo Tiled JSON en /public
   spawnPoint: { x: number; y: number };
   zones: MapZone[];
 }

@@ -402,6 +402,7 @@ export class ProductsService {
     const catOid = new Types.ObjectId(categoryId);
 
     const variants = await this.variantModel.find({ product: productOid }).exec();
+    console.log('[assignProductToCategory] productId:', productId, 'categoryId:', categoryId, 'variants:', variants.length);
     if (!variants.length) {
       throw new BadRequestException('El producto no tiene variantes');
     }
@@ -417,6 +418,7 @@ export class ProductsService {
       isActive: true,
     }));
     await this.productListingModel.insertMany(listings);
+    console.log('[assignProductToCategory] created', listings.length, 'listings for category', categoryId);
 
     return { message: `Producto asignado a la categoría (${variants.length} variantes)` };
   }
@@ -453,14 +455,17 @@ export class ProductsService {
   }
 
   async getListingsByCategory(categoryId: string) {
+    const { Types } = require('mongoose');
+    console.log('[getListingsByCategory] categoryId:', categoryId);
     const listings = await this.productListingModel
-      .find({ category: categoryId, isActive: true })
+      .find({ category: new Types.ObjectId(categoryId), isActive: true })
       .populate({
         path: 'variant',
         populate: [{ path: 'product' }, { path: 'color' }, { path: 'size' }],
       })
       .populate('category')
       .exec();
+    console.log('[getListingsByCategory] found:', listings.length);
     return listings;
   }
 

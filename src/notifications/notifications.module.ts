@@ -7,17 +7,14 @@ import { OrdersModule } from '../orders/orders.module';
 
 /**
  * Notifications Module
- * 
+ *
  * Handles all customer-facing notifications for order and payment events.
  * Uses MailService for email delivery and TelegramService for admin notifications.
  */
 @Module({
-    imports: [
-        MailModule,
-        forwardRef(() => OrdersModule),
-    ],
-    controllers: [TelegramController],
-    providers: [NotificationsService, TelegramService],
-    exports: [NotificationsService, TelegramService],
+  imports: [MailModule, forwardRef(() => OrdersModule)],
+  controllers: [TelegramController],
+  providers: [NotificationsService, TelegramService],
+  exports: [NotificationsService, TelegramService],
 })
-export class NotificationsModule { }
+export class NotificationsModule {}

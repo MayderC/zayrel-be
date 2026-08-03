@@ -7,7 +7,14 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy';
 import { UsersModule } from '../users/users.module';
-import { PasswordResetToken, PasswordResetTokenSchema, MagicLinkToken, MagicLinkTokenSchema, EmailVerificationToken, EmailVerificationTokenSchema } from '../database/schemas';
+import {
+  PasswordResetToken,
+  PasswordResetTokenSchema,
+  MagicLinkToken,
+  MagicLinkTokenSchema,
+  EmailVerificationToken,
+  EmailVerificationTokenSchema,
+} from '../database/schemas';
 
 @Module({
   imports: [
@@ -33,5 +40,4 @@ import { PasswordResetToken, PasswordResetTokenSchema, MagicLinkToken, MagicLink
   controllers: [AuthController],
   exports: [AuthService],
 })
-export class AuthModule { }
-
+export class AuthModule {}

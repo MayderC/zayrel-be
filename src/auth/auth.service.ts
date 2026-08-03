@@ -12,7 +12,14 @@ import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 import { UsersService } from '../users/users.service';
 import { MailService } from '../mail/mail.service';
-import { PasswordResetToken, PasswordResetTokenDocument, MagicLinkToken, MagicLinkTokenDocument, EmailVerificationToken, EmailVerificationTokenDocument } from '../database/schemas';
+import {
+  PasswordResetToken,
+  PasswordResetTokenDocument,
+  MagicLinkToken,
+  MagicLinkTokenDocument,
+  EmailVerificationToken,
+  EmailVerificationTokenDocument,
+} from '../database/schemas';
 import {
   LoginDto,
   RegisterDto,
@@ -42,7 +49,7 @@ export class AuthService {
     private magicLinkTokenModel: Model<MagicLinkTokenDocument>,
     @InjectModel(EmailVerificationToken.name)
     private emailVerificationTokenModel: Model<EmailVerificationTokenDocument>,
-  ) { }
+  ) {}
 
   async register(registerDto: RegisterDto): Promise<AuthResponseDto> {
     try {
@@ -51,19 +58,25 @@ export class AuthService {
 
       // Create magic link for one-click login and send welcome email (non-blocking)
       this.createMagicLinkToken(user._id)
-        .then(magicToken => {
-          const frontendUrl = this.configService.get<string>('FRONTEND_URL', 'http://localhost:3000');
+        .then((magicToken) => {
+          const frontendUrl = this.configService.get<string>(
+            'FRONTEND_URL',
+            'http://localhost:3000',
+          );
           const magicLinkUrl = `${frontendUrl}/auth/magic-link?token=${magicToken}`;
 
-          return this.mailService.sendUserWelcome({
-            email: user.email,
-            name: user.firstname,
-          }, magicLinkUrl);
+          return this.mailService.sendUserWelcome(
+            {
+              email: user.email,
+              name: user.firstname,
+            },
+            magicLinkUrl,
+          );
         })
         .then(() => {
           console.log('[REGISTER] Welcome email sent with magic link to:', user.email);
         })
-        .catch(error => {
+        .catch((error) => {
           console.error('[REGISTER] Error sending welcome email:', error.message);
         });
 
@@ -72,7 +85,7 @@ export class AuthService {
         .then(() => {
           console.log('[REGISTER] Verification email sent to:', user.email);
         })
-        .catch(error => {
+        .catch((error) => {
           console.error('[REGISTER] Error sending verification email:', error.message);
         });
 
@@ -98,7 +111,6 @@ export class AuthService {
       throw new BadRequestException('Error al registrar usuario');
     }
   }
-
 
   async login(loginDto: LoginDto): Promise<AuthResponseDto> {
     const user = await this.validateUser(loginDto.email, loginDto.password);
@@ -200,10 +212,13 @@ export class AuthService {
 
     // Send password reset email
     try {
-      await this.mailService.sendPasswordReset({
-        email: user.email,
-        name: user.firstname,
-      }, resetUrl);
+      await this.mailService.sendPasswordReset(
+        {
+          email: user.email,
+          name: user.firstname,
+        },
+        resetUrl,
+      );
       console.log('[PASSWORD RESET] Email sent to:', user.email);
     } catch (error) {
       console.error('[PASSWORD RESET] Failed to send email:', error.message);
@@ -214,9 +229,7 @@ export class AuthService {
 
   async resetPassword(resetPasswordDto: ResetPasswordDto): Promise<void> {
     // Hash the incoming token to compare with database
-    const hashedToken = crypto.createHash('sha256')
-      .update(resetPasswordDto.token)
-      .digest('hex');
+    const hashedToken = crypto.createHash('sha256').update(resetPasswordDto.token).digest('hex');
 
     // Find valid token
     const tokenDoc = await this.passwordResetTokenModel.findOne({
@@ -243,7 +256,10 @@ export class AuthService {
       isUsed: true,
     });
 
-    console.log('[PASSWORD RESET] Password successfully reset for userId:', tokenDoc.userId.toString());
+    console.log(
+      '[PASSWORD RESET] Password successfully reset for userId:',
+      tokenDoc.userId.toString(),
+    );
   }
 
   async refreshToken(refreshToken: string): Promise<{ accessToken: string; refreshToken: string }> {

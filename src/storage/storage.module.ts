@@ -4,13 +4,13 @@ import { StorageController } from './storage.controller';
 
 @Global()
 @Module({
-    controllers: [StorageController],
-    providers: [
-        {
-            provide: 'PAYMENT_STORAGE',
-            useClass: MongoBase64StorageService
-        }
-    ],
-    exports: ['PAYMENT_STORAGE']
+  controllers: [StorageController],
+  providers: [
+    {
+      provide: 'PAYMENT_STORAGE',
+      useClass: MongoBase64StorageService,
+    },
+  ],
+  exports: ['PAYMENT_STORAGE'],
 })
-export class StorageModule { }
+export class StorageModule {}

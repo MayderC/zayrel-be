@@ -1,4 +1,15 @@
-import { Controller, Post, Put, Patch, Delete, Get, Body, Param, UseGuards, Query } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Put,
+  Patch,
+  Delete,
+  Get,
+  Body,
+  Param,
+  UseGuards,
+  Query,
+} from '@nestjs/common';
 import { ProductsService } from './products.service';
 import {
   CreateProductDto,
@@ -15,7 +26,12 @@ import {
   EditCategoryDto,
   CreateUniqueProductDto,
 } from './dtos';
-import { BadRequestException, ConflictException, NotFoundException, InternalServerErrorException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -23,7 +39,7 @@ import { Role } from '../auth/roles.enum';
 
 @Controller('products')
 export class ProductsController {
-  constructor(private readonly productsService: ProductsService) { }
+  constructor(private readonly productsService: ProductsService) {}
 
   // Endpoints for products
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -76,8 +92,6 @@ export class ProductsController {
   listProducts() {
     return this.productsService.listProducts();
   }
-
-
 
   // Endpoints for variants
   @UseGuards(JwtAuthGuard, RolesGuard)

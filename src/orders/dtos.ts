@@ -1,103 +1,111 @@
-import { IsMongoId, IsNumber, IsOptional, IsString, ValidateNested, IsEnum, IsArray } from 'class-validator';
+import {
+  IsMongoId,
+  IsNumber,
+  IsOptional,
+  IsString,
+  ValidateNested,
+  IsEnum,
+  IsArray,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class GuestInfoDto {
-    @IsString()
-    name: string;
+  @IsString()
+  name: string;
 
-    @IsOptional()
-    @IsString()
-    contact?: string;
+  @IsOptional()
+  @IsString()
+  contact?: string;
 
-    @IsOptional()
-    @IsOptional()
-    @IsString()
-    email?: string;
+  @IsOptional()
+  @IsOptional()
+  @IsString()
+  email?: string;
 }
 
 export class ShippingAddressDto {
-    @IsString()
-    street: string;
+  @IsString()
+  street: string;
 
-    @IsString()
-    city: string;
+  @IsString()
+  city: string;
 
-    @IsString()
-    state: string;
+  @IsString()
+  state: string;
 
-    @IsString()
-    zipRegion: string;
+  @IsString()
+  zipRegion: string;
 
-    @IsString()
-    country: string;
+  @IsString()
+  country: string;
 
-    @IsString()
-    phone: string;
+  @IsString()
+  phone: string;
 }
 
 export class CreateOrderItemDto {
-    @IsMongoId()
-    variantId: string;
+  @IsMongoId()
+  variantId: string;
 
-    @IsNumber()
-    quantity: number;
+  @IsNumber()
+  quantity: number;
 
-    @IsOptional()
-    @IsNumber()
-    unitPrice?: number;
+  @IsOptional()
+  @IsNumber()
+  unitPrice?: number;
 }
 
 export class CreateOrderDto {
-    @IsOptional()
-    @IsMongoId()
-    user?: string;
+  @IsOptional()
+  @IsMongoId()
+  user?: string;
 
-    @IsOptional()
-    @ValidateNested()
-    @Type(() => GuestInfoDto)
-    guestInfo?: GuestInfoDto;
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => GuestInfoDto)
+  guestInfo?: GuestInfoDto;
 
-    @IsOptional()
-    @ValidateNested()
-    @Type(() => ShippingAddressDto)
-    shippingAddress?: ShippingAddressDto;
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => ShippingAddressDto)
+  shippingAddress?: ShippingAddressDto;
 
-    @IsEnum(['online', 'manual_sale'])
-    @IsOptional()
-    orderType?: string = 'online';
+  @IsEnum(['online', 'manual_sale'])
+  @IsOptional()
+  orderType?: string = 'online';
 
-    @IsArray()
-    @ValidateNested({ each: true })
-    @Type(() => CreateOrderItemDto)
-    items: CreateOrderItemDto[];
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateOrderItemDto)
+  items: CreateOrderItemDto[];
 }
 
 export class UpdatePaymentProofDto {
-    @IsOptional()
-    @IsString()
-    url?: string;
+  @IsOptional()
+  @IsString()
+  url?: string;
 
-    @IsOptional()
-    @IsEnum(['transfer', 'sinpe', 'onvopay', 'paypal', 'other'])
-    type?: string;
+  @IsOptional()
+  @IsEnum(['transfer', 'sinpe', 'onvopay', 'paypal', 'other'])
+  type?: string;
 
-    @IsOptional()
-    @IsString()
-    reference?: string;
+  @IsOptional()
+  @IsString()
+  reference?: string;
 
-    @IsEnum(['pending', 'verified', 'rejected'])
-    @IsOptional()
-    status?: string = 'pending';
+  @IsEnum(['pending', 'verified', 'rejected'])
+  @IsOptional()
+  status?: string = 'pending';
 
-    @IsOptional()
-    @IsString()
-    reason?: string;
+  @IsOptional()
+  @IsString()
+  reason?: string;
 }
 
 export class UpdateOrderTrackingDto {
-    @IsString()
-    trackingNumber: string;
+  @IsString()
+  trackingNumber: string;
 
-    @IsString()
-    shippingProvider: string;
+  @IsString()
+  shippingProvider: string;
 }

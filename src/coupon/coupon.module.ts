@@ -5,13 +5,9 @@ import { CouponService } from './coupon.service';
 import { Coupon, CouponSchema } from '../database/schemas';
 
 @Module({
-    imports: [
-        MongooseModule.forFeature([
-            { name: Coupon.name, schema: CouponSchema },
-        ]),
-    ],
-    controllers: [CouponController],
-    providers: [CouponService],
-    exports: [CouponService],
+  imports: [MongooseModule.forFeature([{ name: Coupon.name, schema: CouponSchema }])],
+  controllers: [CouponController],
+  providers: [CouponService],
+  exports: [CouponService],
 })
-export class CouponModule { }
+export class CouponModule {}

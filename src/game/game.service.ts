@@ -20,9 +20,7 @@ export class GameService {
   private drops = new Map<string, DropEvent>();
   private scavengerCoupons = new Map<string, ScavengerCoupon>();
 
-  constructor(
-    @InjectModel(User.name) private userModel: Model<UserDocument>,
-  ) {
+  constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {
     this.initRooms();
   }
 
@@ -64,7 +62,10 @@ export class GameService {
     let activeSkin: string | null = null;
 
     if (userId) {
-      const user = await this.userModel.findById(userId).select('+zaycoins +activeAvatarSkin +isStarSeller').lean();
+      const user = await this.userModel
+        .findById(userId)
+        .select('+zaycoins +activeAvatarSkin +isStarSeller')
+        .lean();
       if (user) {
         zaycoins = (user as any).zaycoins ?? 0;
         isStarSeller = (user as any).isStarSeller ?? false;
@@ -198,7 +199,11 @@ export class GameService {
     this.logger.log(`Drop ${drop.id} creado en mapa ${drop.mapId}`);
   }
 
-  claimDrop(dropId: string, userId: string | null, socketId: string): {
+  claimDrop(
+    dropId: string,
+    userId: string | null,
+    socketId: string,
+  ): {
     success: boolean;
     reward?: DropEvent['reward'];
     remaining?: number;
@@ -238,7 +243,12 @@ export class GameService {
     this.scavengerCoupons.set(coupon.id, coupon);
   }
 
-  checkScavengerFind(socketId: string, x: number, y: number, mapId: string): ScavengerCoupon | null {
+  checkScavengerFind(
+    socketId: string,
+    x: number,
+    y: number,
+    mapId: string,
+  ): ScavengerCoupon | null {
     for (const coupon of this.scavengerCoupons.values()) {
       if (coupon.mapId !== mapId) continue;
       if (coupon.foundBy.includes(socketId)) continue;

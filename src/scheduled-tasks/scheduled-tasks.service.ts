@@ -2,214 +2,228 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { Cart, CartDocument, User, UserDocument, Coupon, CouponDocument, Variant, VariantDocument, Quote, QuoteDocument } from '../database/schemas';
+import {
+  Cart,
+  CartDocument,
+  User,
+  UserDocument,
+  Coupon,
+  CouponDocument,
+  Variant,
+  VariantDocument,
+  Quote,
+  QuoteDocument,
+} from '../database/schemas';
 import { MailService } from '../mail/mail.service';
 
 interface CartItemForEmail {
-    name: string;
-    price: number;
-    quantity: number;
-    total: number;
-    image: string | null;
-    size: string;
-    color: string;
+  name: string;
+  price: number;
+  quantity: number;
+  total: number;
+  image: string | null;
+  size: string;
+  color: string;
 }
 
 /**
  * Scheduled Tasks Service
- * 
+ *
  * Handles automated tasks like:
  * - Abandoned cart reminders
  * - Coupon expiration notifications
  */
 @Injectable()
 export class ScheduledTasksService {
-    private readonly logger = new Logger(ScheduledTasksService.name);
+  private readonly logger = new Logger(ScheduledTasksService.name);
 
-    constructor(
-        @InjectModel(Cart.name) private cartModel: Model<CartDocument>,
-        @InjectModel(User.name) private userModel: Model<UserDocument>,
-        @InjectModel(Coupon.name) private couponModel: Model<CouponDocument>,
-        @InjectModel(Variant.name) private variantModel: Model<VariantDocument>,
-        @InjectModel(Quote.name) private quoteModel: Model<QuoteDocument>,
-        private readonly mailService: MailService,
-    ) { }
+  constructor(
+    @InjectModel(Cart.name) private cartModel: Model<CartDocument>,
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
+    @InjectModel(Coupon.name) private couponModel: Model<CouponDocument>,
+    @InjectModel(Variant.name) private variantModel: Model<VariantDocument>,
+    @InjectModel(Quote.name) private quoteModel: Model<QuoteDocument>,
+    private readonly mailService: MailService,
+  ) {}
 
-    /**
-     * Check for abandoned carts every day at 10 AM
-     * Sends reminder emails to users who haven't updated their cart in 3 days
-     */
-    @Cron(CronExpression.EVERY_DAY_AT_10AM)
-    async handleAbandonedCarts() {
-        this.logger.log('🔄 Running abandoned cart check...');
+  /**
+   * Check for abandoned carts every day at 10 AM
+   * Sends reminder emails to users who haven't updated their cart in 3 days
+   */
+  @Cron(CronExpression.EVERY_DAY_AT_10AM)
+  async handleAbandonedCarts() {
+    this.logger.log('🔄 Running abandoned cart check...');
 
-        const threeDaysAgo = new Date();
-        threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+    const threeDaysAgo = new Date();
+    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
 
-        try {
-            // Find carts that:
-            // 1. Have items
-            // 2. Haven't been updated in 3+ days
-            // 3. Haven't been notified yet (reminderSentAt is null)
-            const abandonedCarts = await this.cartModel.find({
-                items: { $exists: true, $not: { $size: 0 } },
-                lastUpdated: { $lt: threeDaysAgo },
-                reminderSentAt: null,
-            }).limit(50); // Process 50 at a time
+    try {
+      // Find carts that:
+      // 1. Have items
+      // 2. Haven't been updated in 3+ days
+      // 3. Haven't been notified yet (reminderSentAt is null)
+      const abandonedCarts = await this.cartModel
+        .find({
+          items: { $exists: true, $not: { $size: 0 } },
+          lastUpdated: { $lt: threeDaysAgo },
+          reminderSentAt: null,
+        })
+        .limit(50); // Process 50 at a time
 
-            this.logger.log(`Found ${abandonedCarts.length} abandoned carts`);
+      this.logger.log(`Found ${abandonedCarts.length} abandoned carts`);
 
-            for (const cart of abandonedCarts) {
-                await this.processAbandonedCart(cart);
-            }
+      for (const cart of abandonedCarts) {
+        await this.processAbandonedCart(cart);
+      }
 
-            this.logger.log('✅ Abandoned cart check completed');
-        } catch (error) {
-            this.logger.error('Error processing abandoned carts:', error);
+      this.logger.log('✅ Abandoned cart check completed');
+    } catch (error) {
+      this.logger.error('Error processing abandoned carts:', error);
+    }
+  }
+
+  /**
+   * Process a single abandoned cart
+   */
+  private async processAbandonedCart(cart: CartDocument) {
+    try {
+      // Get user info
+      const user = await this.userModel.findById(cart.userId);
+      if (!user || !user.email) {
+        this.logger.warn(`No valid user found for cart ${cart._id}`);
+        return;
+      }
+
+      // Get cart items with details
+      const cartItems = await this.getCartItemsForEmail(cart);
+      if (cartItems.length === 0) {
+        return;
+      }
+
+      // Calculate cart total
+      const total = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+      // Create or get abandoned cart coupon (5% off)
+      const couponCode = await this.getOrCreateAbandonedCartCoupon();
+
+      // Send abandoned cart email
+      await this.mailService.sendWithTemplate(
+        user.email,
+        '🛒 ¡Olvidaste algo en tu carrito!',
+        'abandoned-cart',
+        {
+          customerName: user.firstname || 'Cliente',
+          items: cartItems,
+          total,
+          couponCode,
+          couponDiscount: '5%',
+          storeUrl: process.env.FRONTEND_URL || 'https://zayrelstudio.com/store',
+        },
+      );
+
+      // Mark cart as notified using the existing reminderSentAt field
+      cart.reminderSentAt = new Date();
+      await cart.save();
+
+      this.logger.log(`📧 Abandoned cart email sent to ${user.email}`);
+    } catch (error) {
+      this.logger.error(`Error processing abandoned cart ${cart._id}:`, error);
+    }
+  }
+
+  /**
+   * Get cart items with product details for email
+   */
+  private async getCartItemsForEmail(cart: CartDocument): Promise<CartItemForEmail[]> {
+    const items: CartItemForEmail[] = [];
+
+    for (const item of cart.items) {
+      const variant = await this.variantModel
+        .findById(item.variantId)
+        .populate('product')
+        .populate('color')
+        .populate('size');
+
+      if (variant) {
+        const product = variant.product as any;
+        const color = variant.color as any;
+        const size = variant.size as any;
+
+        if (product) {
+          items.push({
+            name: product.name,
+            price: product.price,
+            quantity: item.quantity,
+            total: product.price * item.quantity,
+            image: product.images?.[0]?.url || null,
+            size: size?.name || '',
+            color: color?.name || '',
+          });
         }
+      }
     }
 
-    /**
-     * Process a single abandoned cart
-     */
-    private async processAbandonedCart(cart: CartDocument) {
-        try {
-            // Get user info
-            const user = await this.userModel.findById(cart.userId);
-            if (!user || !user.email) {
-                this.logger.warn(`No valid user found for cart ${cart._id}`);
-                return;
-            }
+    return items;
+  }
 
-            // Get cart items with details
-            const cartItems = await this.getCartItemsForEmail(cart);
-            if (cartItems.length === 0) {
-                return;
-            }
+  /**
+   * Get or create a coupon for abandoned cart emails
+   */
+  private async getOrCreateAbandonedCartCoupon(): Promise<string> {
+    const couponCode = 'VUELVE5';
 
-            // Calculate cart total
-            const total = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    // Check if coupon exists
+    let coupon = await this.couponModel.findOne({ code: couponCode });
 
-            // Create or get abandoned cart coupon (5% off)
-            const couponCode = await this.getOrCreateAbandonedCartCoupon();
-
-            // Send abandoned cart email
-            await this.mailService.sendWithTemplate(
-                user.email,
-                '🛒 ¡Olvidaste algo en tu carrito!',
-                'abandoned-cart',
-                {
-                    customerName: user.firstname || 'Cliente',
-                    items: cartItems,
-                    total,
-                    couponCode,
-                    couponDiscount: '5%',
-                    storeUrl: process.env.FRONTEND_URL || 'https://zayrelstudio.com/store',
-                }
-            );
-
-            // Mark cart as notified using the existing reminderSentAt field
-            cart.reminderSentAt = new Date();
-            await cart.save();
-
-            this.logger.log(`📧 Abandoned cart email sent to ${user.email}`);
-        } catch (error) {
-            this.logger.error(`Error processing abandoned cart ${cart._id}:`, error);
-        }
+    if (!coupon) {
+      // Create the coupon
+      coupon = await this.couponModel.create({
+        code: couponCode,
+        type: 'percentage',
+        value: 5,
+        isActive: true,
+        description: 'Cupón de carrito abandonado - 5% de descuento',
+        maxUses: null, // Unlimited
+        expiresAt: null, // Never expires
+      });
+      this.logger.log('Created abandoned cart coupon: VUELVE5');
     }
 
-    /**
-     * Get cart items with product details for email
-     */
-    private async getCartItemsForEmail(cart: CartDocument): Promise<CartItemForEmail[]> {
-        const items: CartItemForEmail[] = [];
+    return couponCode;
+  }
 
-        for (const item of cart.items) {
-            const variant = await this.variantModel.findById(item.variantId)
-                .populate('product')
-                .populate('color')
-                .populate('size');
+  /**
+   * Expire pending quotes every day at 8 AM
+   * Quotes in 'sent' status that have passed their expiresAt date are marked 'expired'
+   */
+  @Cron(CronExpression.EVERY_DAY_AT_8AM)
+  async handleExpiredQuotes() {
+    this.logger.log('🔄 Running quote expiration check...');
 
-            if (variant) {
-                const product = variant.product as any;
-                const color = variant.color as any;
-                const size = variant.size as any;
+    try {
+      const expired = await this.quoteModel
+        .find({ status: 'sent', expiresAt: { $lt: new Date() } })
+        .populate({ path: 'user', select: 'firstname lastname email' });
 
-                if (product) {
-                    items.push({
-                        name: product.name,
-                        price: product.price,
-                        quantity: item.quantity,
-                        total: product.price * item.quantity,
-                        image: product.images?.[0]?.url || null,
-                        size: size?.name || '',
-                        color: color?.name || '',
-                    });
-                }
-            }
-        }
+      if (expired.length === 0) {
+        this.logger.log('No expired quotes found');
+        return;
+      }
 
-        return items;
+      this.logger.log(`Found ${expired.length} expired quotes`);
+
+      for (const quote of expired) {
+        quote.status = 'expired';
+        await quote.save();
+
+        this.mailService.sendQuoteExpired(quote, quote.user as any).catch((err) => {
+          this.logger.error(`Failed to send expiry email for quote ${quote._id}`, err);
+        });
+      }
+
+      this.logger.log(`✅ Expired ${expired.length} quotes`);
+    } catch (err) {
+      this.logger.error('Error during quote expiration task', err);
     }
-
-    /**
-     * Get or create a coupon for abandoned cart emails
-     */
-    private async getOrCreateAbandonedCartCoupon(): Promise<string> {
-        const couponCode = 'VUELVE5';
-
-        // Check if coupon exists
-        let coupon = await this.couponModel.findOne({ code: couponCode });
-
-        if (!coupon) {
-            // Create the coupon
-            coupon = await this.couponModel.create({
-                code: couponCode,
-                type: 'percentage',
-                value: 5,
-                isActive: true,
-                description: 'Cupón de carrito abandonado - 5% de descuento',
-                maxUses: null, // Unlimited
-                expiresAt: null, // Never expires
-            });
-            this.logger.log('Created abandoned cart coupon: VUELVE5');
-        }
-
-        return couponCode;
-    }
-
-    /**
-     * Expire pending quotes every day at 8 AM
-     * Quotes in 'sent' status that have passed their expiresAt date are marked 'expired'
-     */
-    @Cron(CronExpression.EVERY_DAY_AT_8AM)
-    async handleExpiredQuotes() {
-        this.logger.log('🔄 Running quote expiration check...');
-
-        try {
-            const expired = await this.quoteModel
-                .find({ status: 'sent', expiresAt: { $lt: new Date() } })
-                .populate({ path: 'user', select: 'firstname lastname email' });
-
-            if (expired.length === 0) {
-                this.logger.log('No expired quotes found');
-                return;
-            }
-
-            this.logger.log(`Found ${expired.length} expired quotes`);
-
-            for (const quote of expired) {
-                quote.status = 'expired';
-                await quote.save();
-
-                this.mailService.sendQuoteExpired(quote, quote.user as any).catch((err) => {
-                    this.logger.error(`Failed to send expiry email for quote ${quote._id}`, err);
-                });
-            }
-
-            this.logger.log(`✅ Expired ${expired.length} quotes`);
-        } catch (err) {
-            this.logger.error('Error during quote expiration task', err);
-        }
-    }
+  }
 }

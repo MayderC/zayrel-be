@@ -16,7 +16,7 @@ async function bootstrap() {
 
   // Enable CORS - origins from env (comma-separated) or default to localhost
   const corsOrigins = process.env.CORS_ORIGINS
-    ? process.env.CORS_ORIGINS.split(',').map(o => o.trim())
+    ? process.env.CORS_ORIGINS.split(',').map((o) => o.trim())
     : ['http://localhost:3000'];
 
   app.enableCors({

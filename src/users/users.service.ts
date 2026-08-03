@@ -12,7 +12,7 @@ import { CreateUserDto, UpdateUserDto, UserResponseDto } from './dtos';
 
 @Injectable()
 export class UsersService {
-  constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) { }
+  constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
 
   async create(createUserDto: CreateUserDto): Promise<UserResponseDto> {
     // Verificar si el email ya existe
@@ -198,16 +198,19 @@ export class UsersService {
     return user.addresses || [];
   }
 
-  async addAddress(userId: string, address: {
-    label?: string;
-    street: string;
-    city: string;
-    state: string;
-    zipRegion?: string;
-    country: string;
-    phone: string;
-    isDefault?: boolean;
-  }): Promise<UserResponseDto['addresses']> {
+  async addAddress(
+    userId: string,
+    address: {
+      label?: string;
+      street: string;
+      city: string;
+      state: string;
+      zipRegion?: string;
+      country: string;
+      phone: string;
+      isDefault?: boolean;
+    },
+  ): Promise<UserResponseDto['addresses']> {
     const user = await this.userModel.findOne({ _id: userId, isDeleted: false });
     if (!user) {
       throw new NotFoundException('Usuario no encontrado');
@@ -217,7 +220,7 @@ export class UsersService {
     const addresses = user.addresses || [];
     if (address.isDefault || addresses.length === 0) {
       // Remove default from all other addresses
-      addresses.forEach(addr => addr.isDefault = false);
+      addresses.forEach((addr) => (addr.isDefault = false));
       address.isDefault = true;
     }
 
@@ -236,16 +239,20 @@ export class UsersService {
     return addresses;
   }
 
-  async updateAddress(userId: string, addressIndex: number, addressData: {
-    label?: string;
-    street?: string;
-    city?: string;
-    state?: string;
-    zipRegion?: string;
-    country?: string;
-    phone?: string;
-    isDefault?: boolean;
-  }): Promise<UserResponseDto['addresses']> {
+  async updateAddress(
+    userId: string,
+    addressIndex: number,
+    addressData: {
+      label?: string;
+      street?: string;
+      city?: string;
+      state?: string;
+      zipRegion?: string;
+      country?: string;
+      phone?: string;
+      isDefault?: boolean;
+    },
+  ): Promise<UserResponseDto['addresses']> {
     const user = await this.userModel.findOne({ _id: userId, isDeleted: false });
     if (!user) {
       throw new NotFoundException('Usuario no encontrado');
@@ -269,7 +276,7 @@ export class UsersService {
     // Handle default flag
     if (addressData.isDefault) {
       addresses.forEach((addr, i) => {
-        addr.isDefault = (i === addressIndex);
+        addr.isDefault = i === addressIndex;
       });
     }
 
@@ -300,7 +307,10 @@ export class UsersService {
     return addresses;
   }
 
-  async setDefaultAddress(userId: string, addressIndex: number): Promise<UserResponseDto['addresses']> {
+  async setDefaultAddress(
+    userId: string,
+    addressIndex: number,
+  ): Promise<UserResponseDto['addresses']> {
     const user = await this.userModel.findOne({ _id: userId, isDeleted: false });
     if (!user) {
       throw new NotFoundException('Usuario no encontrado');
@@ -313,7 +323,7 @@ export class UsersService {
 
     // Set all to false, then set the selected one to true
     addresses.forEach((addr, i) => {
-      addr.isDefault = (i === addressIndex);
+      addr.isDefault = i === addressIndex;
     });
 
     await this.userModel.findByIdAndUpdate(userId, { addresses });
@@ -330,7 +340,7 @@ export class UsersService {
       isEmailVerified: user.isEmailVerified,
       isBanned: user.isBanned,
       isDeleted: user.isDeleted,
-      addresses: user.addresses?.map(addr => ({
+      addresses: user.addresses?.map((addr) => ({
         label: addr.label,
         street: addr.street,
         city: addr.city,
