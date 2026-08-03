@@ -1,4 +1,12 @@
-import { IsString, IsNumber, IsOptional, IsBoolean, IsArray, IsMongoId, ValidateNested } from 'class-validator';
+import {
+  IsString,
+  IsNumber,
+  IsOptional,
+  IsBoolean,
+  IsArray,
+  IsMongoId,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 // DTO for size measurements (widthCm/heightCm per size)
@@ -106,12 +114,17 @@ export class CreateVariantDto {
   imageUrl?: string;
 
   @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  images?: string[];
+
+  @IsOptional()
   @IsString()
   canvasImageFront?: string; // Flat PNG for editor canvas - front view
 
   @IsOptional()
   @IsString()
-  canvasImageBack?: string;  // Flat PNG for editor canvas - back view
+  canvasImageBack?: string; // Flat PNG for editor canvas - back view
 }
 
 export class EditVariantDto {
@@ -150,6 +163,11 @@ export class EditVariantDto {
   @IsOptional()
   @IsString()
   imageUrl?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  images?: string[];
 
   @IsOptional()
   @IsString()
@@ -324,7 +342,7 @@ export class EditCategoryDto {
 // DTO para crear producto único desde inventario
 export class CreateUniqueProductDto {
   @IsMongoId()
-  sourceVariantId: string;  // Variante de donde se consume stock
+  sourceVariantId: string; // Variante de donde se consume stock
 
   @IsString()
   name: string;

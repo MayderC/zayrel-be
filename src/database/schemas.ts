@@ -30,22 +30,24 @@ export class User {
   @Prop() telegram?: string;
 
   // --- Zayrel Plaza (minigame) ---
-  @Prop({ default: 0 }) zaycoins: number;           // Moneda virtual ganada jugando
+  @Prop({ default: 0 }) zaycoins: number; // Moneda virtual ganada jugando
   @Prop({ type: String, default: null }) activeAvatarSkin?: string; // SKU de camiseta equipada
-  @Prop({ default: false }) isStarSeller: boolean;  // Halo dorado: comprador frecuente
+  @Prop({ default: false }) isStarSeller: boolean; // Halo dorado: comprador frecuente
 
   @Prop({
-    type: [{
-      label: { type: String }, // e.g., 'Home', 'Office'
-      street: { type: String },
-      city: { type: String },
-      state: { type: String },
-      zipRegion: { type: String },
-      country: { type: String },
-      phone: { type: String },
-      isDefault: { type: Boolean, default: false }
-    }],
-    default: []
+    type: [
+      {
+        label: { type: String }, // e.g., 'Home', 'Office'
+        street: { type: String },
+        city: { type: String },
+        state: { type: String },
+        zipRegion: { type: String },
+        country: { type: String },
+        phone: { type: String },
+        isDefault: { type: Boolean, default: false },
+      },
+    ],
+    default: [],
   })
   addresses: {
     label: string;
@@ -238,6 +240,9 @@ export class Variant {
   // Variant-specific image (optional - falls back to product images if not set)
   @Prop() imageUrl?: string;
 
+  // Gallery images for this variant/color (first one is the main/primary image)
+  @Prop({ type: [String], default: [] }) images?: string[];
+
   // Canvas templates: flat transparent PNGs used in the 2D editor
   // These are DIFFERENT from product listing photos (which may have models/shadows)
   @Prop() canvasImageFront?: string;
@@ -288,7 +293,8 @@ export class LibraryDesign {
   @Prop({ default: 'Regular', enum: ['Logo', 'Regular', 'Full'] }) sizeCategory: string;
   @Prop() category?: string;
   @Prop({ type: [String], default: [] }) tags: string[];
-  @Prop({ type: [{ type: Types.ObjectId, ref: 'LibraryDesign' }], default: [] }) relatedDesignIds: Types.ObjectId[];
+  @Prop({ type: [{ type: Types.ObjectId, ref: 'LibraryDesign' }], default: [] })
+  relatedDesignIds: Types.ObjectId[];
   @Prop() width?: number;
   @Prop() height?: number;
   @Prop() widthCm?: number;
@@ -311,14 +317,17 @@ export class Product {
   @Prop({ type: [Types.ObjectId], ref: Image.name }) images: Types.ObjectId[];
   @Prop({ type: Types.ObjectId, ref: User.name }) creator?: Types.ObjectId;
   @Prop({
-    type: [{
-      size: { type: Types.ObjectId, ref: 'Size', required: true },
-      widthCm: { type: Number, required: true },
-      heightCm: { type: Number, required: true }
-    }],
-    default: []
+    type: [
+      {
+        size: { type: Types.ObjectId, ref: 'Size', required: true },
+        widthCm: { type: Number, required: true },
+        heightCm: { type: Number, required: true },
+      },
+    ],
+    default: [],
   })
   sizeMeasurements: { size: Types.ObjectId; widthCm: number; heightCm: number }[];
+  @Prop({ default: false }) isUniqueProduct?: boolean;
 }
 export const ProductSchema = SchemaFactory.createForClass(Product);
 
@@ -476,7 +485,7 @@ export class Order {
       country: { type: String },
       phone: { type: String },
     },
-    _id: false
+    _id: false,
   })
   shippingAddress?: {
     street: string;
@@ -490,8 +499,6 @@ export class Order {
   @Prop() trackingNumber?: string;
   @Prop() shippingProvider?: string;
 
-
-
   @Prop({ default: 'online', enum: ['online', 'manual_sale'] })
   orderType: string;
 
@@ -500,7 +507,15 @@ export class Order {
 
   @Prop({
     default: 'esperando_pago',
-    enum: ['esperando_pago', 'pagada', 'en_produccion', 'enviada', 'completada', 'cancelada', 'archivada']
+    enum: [
+      'esperando_pago',
+      'pagada',
+      'en_produccion',
+      'enviada',
+      'completada',
+      'cancelada',
+      'archivada',
+    ],
   })
   status: string;
 }
@@ -545,7 +560,7 @@ export class Quote {
 
   @Prop({ type: [String], default: [] })
   designImageUrls: string[];
-  
+
   @Prop()
   guestName?: string;
 

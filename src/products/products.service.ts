@@ -35,7 +35,7 @@ export class ProductsService {
     @InjectModel(Color.name) private colorModel: Model<ColorDocument>,
     @InjectModel(Size.name) private sizeModel: Model<SizeDocument>,
     @InjectModel(Category.name) private categoryModel: Model<CategoryDocument>,
-  ) { }
+  ) {}
 
   // Method to create a product
   async createProduct(productDto: CreateProductDto) {
@@ -57,15 +57,13 @@ export class ProductsService {
 
   // Method to list all products
   async listProducts() {
-    return await this.productModel.find()
+    return await this.productModel
+      .find()
       .populate('images')
       .populate('sizeMeasurements.size')
       .populate({
         path: 'variants',
-        populate: [
-          { path: 'color' },
-          { path: 'size' }
-        ]
+        populate: [{ path: 'color' }, { path: 'size' }],
       })
       .exec();
   }
@@ -73,7 +71,8 @@ export class ProductsService {
   // Method to find a product by ID (with variants)
   async findProductById(productId: string) {
     console.log('[findProductById] Looking for product:', productId);
-    const product = await this.productModel.findById(productId)
+    const product = await this.productModel
+      .findById(productId)
       .populate('images')
       .populate('sizeMeasurements.size')
       .exec();
@@ -92,7 +91,11 @@ export class ProductsService {
       .populate('color')
       .exec();
 
-    console.log('[findProductById] Variants found:', variants.length, variants.map(v => v._id));
+    console.log(
+      '[findProductById] Variants found:',
+      variants.length,
+      variants.map((v) => v._id),
+    );
 
     // Return product with variants
     return {
@@ -181,7 +184,9 @@ export class ProductsService {
           size: newSize,
         });
         if (existing) {
-          throw new BadRequestException('Ya existe una variante con esa combinación de color y talla');
+          throw new BadRequestException(
+            'Ya existe una variante con esa combinación de color y talla',
+          );
         }
       }
     }
@@ -307,7 +312,7 @@ export class ProductsService {
     const usageCount = await this.variantModel.countDocuments({ color: colorId });
     if (usageCount > 0) {
       throw new BadRequestException(
-        `No se puede eliminar: ${usageCount} variante(s) usan este color.`
+        `No se puede eliminar: ${usageCount} variante(s) usan este color.`,
       );
     }
 
@@ -336,15 +341,15 @@ export class ProductsService {
     if (!size) throw new NotFoundException('Talla no encontrada');
 
     const variantUsage = await this.variantModel.countDocuments({ size: sizeId });
-    const measurementUsage = await this.productModel.countDocuments({ 'sizeMeasurements.size': sizeId });
+    const measurementUsage = await this.productModel.countDocuments({
+      'sizeMeasurements.size': sizeId,
+    });
 
     if (variantUsage > 0 || measurementUsage > 0) {
       const parts: string[] = [];
       if (variantUsage > 0) parts.push(`${variantUsage} variante(s)`);
       if (measurementUsage > 0) parts.push(`${measurementUsage} producto(s) con medidas`);
-      throw new BadRequestException(
-        `No se puede eliminar: ${parts.join(' y ')} usan esta talla.`
-      );
+      throw new BadRequestException(`No se puede eliminar: ${parts.join(' y ')} usan esta talla.`);
     }
 
     await this.sizeModel.findByIdAndDelete(sizeId);
@@ -369,7 +374,9 @@ export class ProductsService {
   }
 
   async editCategory(categoryId: string, categoryDto: any) {
-    const category = await this.categoryModel.findByIdAndUpdate(categoryId, categoryDto, { new: true });
+    const category = await this.categoryModel.findByIdAndUpdate(categoryId, categoryDto, {
+      new: true,
+    });
     if (!category) throw new NotFoundException('Categoría no encontrada');
     return category;
   }
@@ -381,7 +388,7 @@ export class ProductsService {
     const usageCount = await this.productListingModel.countDocuments({ category: categoryId });
     if (usageCount > 0) {
       throw new BadRequestException(
-        `No se puede eliminar: ${usageCount} producto(s) en catálogo usan esta categoría.`
+        `No se puede eliminar: ${usageCount} producto(s) en catálogo usan esta categoría.`,
       );
     }
 
@@ -400,11 +407,11 @@ export class ProductsService {
     }
 
     await this.productListingModel.deleteMany({
-      variant: { $in: variants.map(v => v._id) },
+      variant: { $in: variants.map((v) => v._id) },
       category: { $ne: null },
     });
 
-    const listings = variants.map(v => ({
+    const listings = variants.map((v) => ({
       variant: v._id,
       category: catOid,
       isActive: true,
@@ -420,11 +427,13 @@ export class ProductsService {
 
     const variants = await this.variantModel.find({ product: productOid }).exec();
     const result = await this.productListingModel.deleteMany({
-      variant: { $in: variants.map(v => v._id) },
+      variant: { $in: variants.map((v) => v._id) },
       category: { $ne: null },
     });
 
-    return { message: `Producto removido de categoría (${result.deletedCount} listings eliminados)` };
+    return {
+      message: `Producto removido de categoría (${result.deletedCount} listings eliminados)`,
+    };
   }
 
   async getProductCategory(productId: string) {
@@ -432,10 +441,13 @@ export class ProductsService {
     const productOid = new Types.ObjectId(productId);
 
     const variants = await this.variantModel.find({ product: productOid }).exec();
-    const listing = await this.productListingModel.findOne({
-      variant: { $in: variants.map(v => v._id) },
-      category: { $ne: null },
-    }).populate('category').exec();
+    const listing = await this.productListingModel
+      .findOne({
+        variant: { $in: variants.map((v) => v._id) },
+        category: { $ne: null },
+      })
+      .populate('category')
+      .exec();
 
     return listing?.category || null;
   }
@@ -493,6 +505,7 @@ export class ProductsService {
       description: dto.description || '',
       price: dto.price,
       images: dto.images || [],
+      isUniqueProduct: true,
     });
     await newProduct.save();
 
@@ -508,7 +521,7 @@ export class ProductsService {
 
     // 6. Restar stock del origen (DESPUÉS de todo lo demás para seguridad)
     await this.variantModel.findByIdAndUpdate(dto.sourceVariantId, {
-      $inc: { stock: -1 }
+      $inc: { stock: -1 },
     });
 
     // Populate variant for response
@@ -521,7 +534,7 @@ export class ProductsService {
     return {
       product: newProduct,
       variant: populatedVariant,
-      sourceVariantNewStock: sourceVariant.stock - 1
+      sourceVariantNewStock: sourceVariant.stock - 1,
     };
   }
 }
