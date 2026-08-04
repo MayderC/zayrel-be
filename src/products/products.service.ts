@@ -512,6 +512,8 @@ export class ProductsService {
       price: dto.price,
       // Inherit source product images if none provided
       images: (dto.images && dto.images.length > 0) ? dto.images : (sourceVariant.product as any)?.images || [],
+      // Inherit source product's size measurements
+      sizeMeasurements: (sourceVariant.product as any)?.sizeMeasurements || [],
       isUniqueProduct: true,
     });
     await newProduct.save();
