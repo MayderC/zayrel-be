@@ -198,6 +198,22 @@ export class ProductsController {
     return this.productsService.listListings(filters);
   }
 
+  // Admin: list all listings (no isActive filter) for Vitrina management
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.Admin)
+  @Get('listings/admin')
+  listListingsAdmin() {
+    return this.productsService.listListingsAdmin();
+  }
+
+  // Admin: bulk-update showcase flags for a product (all its variants' listings)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.Admin)
+  @Put('listings/showcase/:productId')
+  updateShowcase(@Param('productId') productId: string, @Body() dto: EditListingDto) {
+    return this.productsService.updateShowcase(productId, dto);
+  }
+
   // --- DEPENDENCIES (Colors, Sizes, Categories) ---
 
   // COLORS

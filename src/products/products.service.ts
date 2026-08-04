@@ -236,6 +236,46 @@ export class ProductsService {
     return await this.productListingModel.findByIdAndDelete(listingId);
   }
 
+  // Admin: list all listings without isActive filter (for Vitrina management)
+  async listListingsAdmin() {
+    return await this.productListingModel
+      .find({})
+      .populate({
+        path: 'variant',
+        populate: [{ path: 'product' }, { path: 'color' }, { path: 'size' }],
+      })
+      .populate('category')
+      .exec();
+  }
+
+  // Admin: bulk-update showcase flags for all listings of a product's variants
+  async updateShowcase(productId: string, dto: EditListingDto) {
+    const { Types } = require('mongoose');
+    const variants = await this.variantModel
+      .find({ product: new Types.ObjectId(productId) })
+      .select('_id')
+      .exec();
+
+    if (!variants.length) {
+      throw new NotFoundException('No variants found for this product');
+    }
+
+    const variantIds = variants.map(v => v._id);
+    const update: any = {};
+    if (dto.isActive !== undefined) update.isActive = dto.isActive;
+    if (dto.featured !== undefined) update.featured = dto.featured;
+    if (dto.isNewArrival !== undefined) update.isNewArrival = dto.isNewArrival;
+    if (dto.isBestSeller !== undefined) update.isBestSeller = dto.isBestSeller;
+    if (dto.displayOrder !== undefined) update.displayOrder = dto.displayOrder;
+
+    const result = await this.productListingModel.updateMany(
+      { variant: { $in: variantIds } },
+      { $set: update },
+    );
+
+    return { matched: result.matchedCount, modified: result.modifiedCount };
+  }
+
   // Method to list all product listings
   async listListings(filters: any = {}) {
     const all = await this.productListingModel.find(filters).exec();
