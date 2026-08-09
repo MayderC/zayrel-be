@@ -228,7 +228,7 @@ export class ProductsService {
 
     const product = await this.productModel
       .findById(productId)
-      .select('name slug')
+      .select('name slug sizeMeasurements')
       .populate('sizeMeasurements.size')
       .exec();
 
