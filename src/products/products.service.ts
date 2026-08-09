@@ -252,8 +252,10 @@ export class ProductsService {
 
       const colorKey = color._id.toString();
       if (!grouped.has(colorKey)) {
+        const colorImage = v.imageUrl || (v.images && v.images.length > 0 ? v.images[0] : null);
         grouped.set(colorKey, {
           color: { _id: color._id, name: color.name, hex: color.hex },
+          image: colorImage,
           sizes: [],
         });
       }
