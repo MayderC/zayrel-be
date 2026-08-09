@@ -312,6 +312,12 @@ export class ProductsController {
     return product;
   }
 
+  // Public: get variants grouped by color with stock per size
+  @Get(':id/variants-by-color')
+  getVariantsByColor(@Param('id') productId: string) {
+    return this.productsService.getVariantsByColor(productId);
+  }
+
   // Dynamic route must be LAST to avoid capturing other routes
   @Get(':idOrSlug')
   async getProduct(@Param('idOrSlug') idOrSlug: string) {

@@ -218,6 +218,58 @@ export class ProductsService {
       .exec();
   }
 
+  // Public: get product variants grouped by color with stock per size
+  async getVariantsByColor(productId: string) {
+    const { Types } = require('mongoose');
+
+    if (!Types.ObjectId.isValid(productId)) {
+      throw new NotFoundException('ID de producto inválido');
+    }
+
+    const product = await this.productModel
+      .findById(productId)
+      .select('name slug')
+      .exec();
+
+    if (!product) {
+      throw new NotFoundException('Producto no encontrado');
+    }
+
+    const variants = await this.variantModel
+      .find({ product: new Types.ObjectId(productId) })
+      .populate('color')
+      .populate('size')
+      .exec();
+
+    const grouped = new Map<string, any>();
+
+    for (const v of variants) {
+      const color = v.color as any;
+      const size = v.size as any;
+
+      if (!color || !size) continue;
+
+      const colorKey = color._id.toString();
+      if (!grouped.has(colorKey)) {
+        grouped.set(colorKey, {
+          color: { _id: color._id, name: color.name, hex: color.hex },
+          sizes: [],
+        });
+      }
+
+      grouped.get(colorKey).sizes.push({
+        size: { _id: size._id, name: size.name },
+        stock: v.stock,
+        isAvailable: v.isAvailable,
+      });
+    }
+
+    return {
+      product: { _id: product._id, name: product.name, slug: product.slug },
+      colors: Array.from(grouped.values()),
+    };
+  }
+
   // Method to create a product listing
   async createListing(listingDto: CreateListingDto) {
     const listing = new this.productListingModel(listingDto);
