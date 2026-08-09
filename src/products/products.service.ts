@@ -229,6 +229,7 @@ export class ProductsService {
     const product = await this.productModel
       .findById(productId)
       .select('name slug')
+      .populate('sizeMeasurements.size')
       .exec();
 
     if (!product) {
@@ -265,7 +266,16 @@ export class ProductsService {
     }
 
     return {
-      product: { _id: product._id, name: product.name, slug: product.slug },
+      product: {
+        _id: product._id,
+        name: product.name,
+        slug: product.slug,
+        sizeMeasurements: (product.sizeMeasurements || []).map((sm: any) => ({
+          size: sm.size ? { _id: sm.size._id, name: sm.size.name } : null,
+          widthCm: sm.widthCm,
+          heightCm: sm.heightCm,
+        })).filter((sm: any) => sm.size !== null),
+      },
       colors: Array.from(grouped.values()),
     };
   }
