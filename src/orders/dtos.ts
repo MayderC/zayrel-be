@@ -7,6 +7,7 @@ import {
   ValidateIf,
   ValidateNested,
   IsEnum,
+  IsIn,
   IsArray,
   Min,
 } from 'class-validator';
@@ -77,6 +78,10 @@ export class CreateOrderDto {
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
   shippingCost?: number;
+
+  @IsOptional()
+  @IsIn(['esperando_pago', 'pagada'])
+  status?: 'esperando_pago' | 'pagada';
 
   @IsEnum(['online', 'manual_sale'])
   @IsOptional()

@@ -92,6 +92,9 @@ export class OrdersService {
     const subtotal = orderItemsData.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
     const shippingCost = isManualOrder ? createOrderDto.shippingCost ?? 0 : 0;
     const total = subtotal + shippingCost;
+    const initialStatus = isManualOrder
+      ? createOrderDto.status ?? 'esperando_pago'
+      : 'esperando_pago';
 
     // 2. SECURITY: Determine user securely - use authenticated user, ignore DTO.user
     let userIdForOrder: Types.ObjectId | undefined;
@@ -116,7 +119,7 @@ export class OrdersService {
       guestInfo: guestInfoForOrder,
       shippingAddress: createOrderDto.shippingAddress,
       orderType: createOrderDto.orderType || 'online',
-      status: createOrderDto.orderType === 'manual_sale' ? 'pagada' : 'esperando_pago',
+      status: initialStatus,
       ...(isManualOrder ? { subtotal, shippingCost, total } : {}),
     });
     const savedOrder = await newOrder.save();

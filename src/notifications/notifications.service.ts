@@ -145,17 +145,26 @@ export class NotificationsService {
    * @param order - The order object with all details
    */
   async notifyOrderCreated(order: any): Promise<void> {
+    const paymentConfirmed = ['pagada', 'en_produccion', 'enviada', 'completada'].includes(
+      order.status,
+    );
+
     try {
-      await this.mailService.sendOrderConfirmation(order);
-      this.logger.log(`📧 Order confirmation sent for order ${order._id}`);
+      if (paymentConfirmed) {
+        await this.mailService.sendPaymentApproved(order);
+      } else {
+        await this.mailService.sendOrderConfirmation(order);
+      }
+      this.logger.log(`Order email sent for order ${order._id}`);
     } catch (error) {
-      this.logger.error(`Failed to send order confirmation: ${error.message}`);
+      this.logger.error(`Failed to send order notification: ${error.message}`);
       // Don't throw - notification failure shouldn't block order creation
     }
 
-    // Telegram notification to admin (Esperando Pago topic)
+    const notificationStatus = paymentConfirmed ? 'pagada' : 'esperando_pago';
+
     try {
-      await this.telegramService.notifyStatusChange(order, 'esperando_pago');
+      await this.telegramService.notifyStatusChange(order, notificationStatus);
     } catch (error) {
       this.logger.error(`Failed to send Telegram new order notification: ${error.message}`);
     }
@@ -163,9 +172,12 @@ export class NotificationsService {
     // WhatsApp notification (optional)
     const customerPhone = order.guestInfo?.contact || order.shippingAddress?.phone;
     if (customerPhone) {
+      const message = paymentConfirmed
+        ? `✅ ¡Pago confirmado! Tu pedido #${order._id.toString().slice(-6)} quedó registrado. Te avisaremos cuando inicie su preparación.`
+        : `🛍️ ¡Orden recibida! Tu pedido #${order._id.toString().slice(-6)} está pendiente de pago. Te notificaremos cuando se confirme.`;
       await this.sendWhatsApp(
         customerPhone,
-        `🛍️ ¡Orden recibida! Tu pedido #${order._id.toString().slice(-6)} ha sido creado. Te notificaremos cuando confirmemos tu pago.`,
+        message,
       );
     }
   }
@@ -194,7 +206,7 @@ export class NotificationsService {
     if (customerPhone) {
       await this.sendWhatsApp(
         customerPhone,
-        `✅ ¡Pago confirmado! Tu pedido #${order._id.toString().slice(-6)} está en producción.`,
+        `✅ ¡Pago confirmado! Tu pedido #${order._id.toString().slice(-6)} quedó registrado. Te avisaremos cuando inicie su preparación.`,
       );
     }
   }
