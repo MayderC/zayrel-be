@@ -39,9 +39,15 @@ export class OrdersService {
   ) {}
 
   async create(createOrderDto: CreateOrderDto, authenticatedUser?: any) {
+    if (createOrderDto.orderType === 'manual_sale' && !createOrderDto.guestInfo?.email?.trim()) {
+      throw new BadRequestException(
+        'El correo del cliente es requerido para enviar notificaciones de una orden interna.',
+      );
+    }
+
     // STORE_CHECKOUT_ENABLED: set to false to disable purchases
     const STORE_CHECKOUT_ENABLED = false;
-    if (!STORE_CHECKOUT_ENABLED) {
+    if (!STORE_CHECKOUT_ENABLED && createOrderDto.orderType !== 'manual_sale') {
       throw new ServiceUnavailableException('La tienda está cerrada temporalmente. Volvé pronto.');
     }
 
@@ -86,7 +92,10 @@ export class OrdersService {
     let userIdForOrder: Types.ObjectId | undefined;
     let guestInfoForOrder = createOrderDto.guestInfo;
 
-    if (authenticatedUser) {
+    if (authenticatedUser && createOrderDto.orderType === 'manual_sale') {
+      // A manual sale belongs to the customer entered by the admin, not to the admin account.
+      guestInfoForOrder = createOrderDto.guestInfo;
+    } else if (authenticatedUser) {
       // Authenticated user: use their ID from the verified token
       userIdForOrder = new Types.ObjectId(authenticatedUser._id);
       guestInfoForOrder = undefined; // Logged in users are not guests

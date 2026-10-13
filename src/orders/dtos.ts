@@ -3,6 +3,8 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  IsEmail,
+  ValidateIf,
   ValidateNested,
   IsEnum,
   IsArray,
@@ -18,8 +20,8 @@ export class GuestInfoDto {
   contact?: string;
 
   @IsOptional()
-  @IsOptional()
-  @IsString()
+  @ValidateIf((_object, value) => value !== '')
+  @IsEmail()
   email?: string;
 }
 

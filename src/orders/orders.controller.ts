@@ -8,6 +8,7 @@ import {
   UseGuards,
   Request,
   Query,
+  ForbiddenException,
 } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -26,7 +27,18 @@ export class OrdersController {
   @Post()
   @UseGuards(OptionalJwtAuthGuard)
   create(@Body() createOrderDto: CreateOrderDto, @Request() req) {
+    if (createOrderDto.orderType === 'manual_sale') {
+      throw new ForbiddenException('Las órdenes internas deben crearse desde el dashboard.');
+    }
     return this.ordersService.create(createOrderDto, req.user);
+  }
+
+  // Internal orders are restricted to admins and remain available when the storefront is closed.
+  @Post('manual')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.Admin)
+  createManual(@Body() createOrderDto: CreateOrderDto, @Request() req) {
+    return this.ordersService.create({ ...createOrderDto, orderType: 'manual_sale' }, req.user);
   }
 
   // Admin only - list all orders
