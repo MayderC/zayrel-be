@@ -88,6 +88,11 @@ export class OrdersService {
       });
     }
 
+    const isManualOrder = createOrderDto.orderType === 'manual_sale';
+    const subtotal = orderItemsData.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
+    const shippingCost = isManualOrder ? createOrderDto.shippingCost ?? 0 : 0;
+    const total = subtotal + shippingCost;
+
     // 2. SECURITY: Determine user securely - use authenticated user, ignore DTO.user
     let userIdForOrder: Types.ObjectId | undefined;
     let guestInfoForOrder = createOrderDto.guestInfo;
@@ -112,6 +117,7 @@ export class OrdersService {
       shippingAddress: createOrderDto.shippingAddress,
       orderType: createOrderDto.orderType || 'online',
       status: createOrderDto.orderType === 'manual_sale' ? 'pagada' : 'esperando_pago',
+      ...(isManualOrder ? { subtotal, shippingCost, total } : {}),
     });
     const savedOrder = await newOrder.save();
 
@@ -155,7 +161,9 @@ export class OrdersService {
         size: item.size,
         color: item.color,
       })),
-      total: orderItemsData.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0),
+      subtotal,
+      shippingCost,
+      total,
     };
 
     // Don't await - let email send in background
@@ -260,9 +268,10 @@ export class OrdersService {
           .exec();
 
         // Calculate total
-        const orderTotal = items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
+        const subtotal = items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
+        const orderTotal = subtotal + (order.shippingCost || 0);
 
-        return { ...order.toObject(), items, total: orderTotal };
+        return { ...order.toObject(), items, subtotal, total: orderTotal };
       }),
     );
 
@@ -320,9 +329,10 @@ export class OrdersService {
           .exec();
 
         // Calculate total
-        const total = items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
+        const subtotal = items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
+        const total = subtotal + (order.shippingCost || 0);
 
-        return { ...order.toObject(), items, total };
+        return { ...order.toObject(), items, subtotal, total };
       }),
     );
 
@@ -339,8 +349,9 @@ export class OrdersService {
         populate: { path: 'product size color' },
       })
       .exec();
-    const total = items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
-    return { ...order.toObject(), items, total };
+    const subtotal = items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
+    const total = subtotal + (order.shippingCost || 0);
+    return { ...order.toObject(), items, subtotal, total };
   }
 
   async updatePaymentProof(id: string, proofDto: UpdatePaymentProofDto) {
@@ -400,7 +411,8 @@ export class OrdersService {
     if (isNewProofUpload) {
       // Fetch items to calculate total and display detailed list
       const items = await this.orderItemModel.find({ orderId: order._id }).lean();
-      const total = items.reduce((sum, item: any) => sum + item.quantity * item.unitPrice, 0);
+      const subtotal = items.reduce((sum, item: any) => sum + item.quantity * item.unitPrice, 0);
+      const total = subtotal + (order.shippingCost || 0);
 
       const notificationPayload = {
         ...order.toObject(),
@@ -424,7 +436,8 @@ export class OrdersService {
 
       // Get order items and calculate total for notification
       const items = await this.orderItemModel.find({ orderId: order._id }).lean();
-      const total = items.reduce((sum, item: any) => sum + item.quantity * item.unitPrice, 0);
+      const subtotal = items.reduce((sum, item: any) => sum + item.quantity * item.unitPrice, 0);
+      const total = subtotal + (order.shippingCost || 0);
 
       const notificationPayload = {
         ...order.toObject(),
@@ -440,7 +453,8 @@ export class OrdersService {
     if (proofDto.status === 'rejected') {
       // Get order items and calculate total for notification
       const items = await this.orderItemModel.find({ orderId: order._id }).lean();
-      const total = items.reduce((sum, item: any) => sum + item.quantity * item.unitPrice, 0);
+      const subtotal = items.reduce((sum, item: any) => sum + item.quantity * item.unitPrice, 0);
+      const total = subtotal + (order.shippingCost || 0);
 
       const notificationPayload = {
         ...order.toObject(),
@@ -510,7 +524,8 @@ export class OrdersService {
     if (status !== previousStatus) {
       // Prepare payload
       const items = await this.orderItemModel.find({ orderId: order._id }).lean();
-      const total = items.reduce((sum, item: any) => sum + item.quantity * item.unitPrice, 0);
+      const subtotal = items.reduce((sum, item: any) => sum + item.quantity * item.unitPrice, 0);
+      const total = subtotal + (order.shippingCost || 0);
 
       const payload = {
         ...savedOrder.toObject(),

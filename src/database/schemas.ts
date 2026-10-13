@@ -499,6 +499,10 @@ export class Order {
   @Prop() trackingNumber?: string;
   @Prop() shippingProvider?: string;
 
+  @Prop({ min: 0 }) subtotal?: number;
+  @Prop({ min: 0 }) shippingCost?: number;
+  @Prop({ min: 0 }) total?: number;
+
   @Prop({ default: 'online', enum: ['online', 'manual_sale'] })
   orderType: string;
 

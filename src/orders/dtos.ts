@@ -8,6 +8,7 @@ import {
   ValidateNested,
   IsEnum,
   IsArray,
+  Min,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -71,6 +72,11 @@ export class CreateOrderDto {
   @ValidateNested()
   @Type(() => ShippingAddressDto)
   shippingAddress?: ShippingAddressDto;
+
+  @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  shippingCost?: number;
 
   @IsEnum(['online', 'manual_sale'])
   @IsOptional()
