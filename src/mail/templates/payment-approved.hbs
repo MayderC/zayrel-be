@@ -316,6 +316,20 @@
                         </div>
                     </td>
                 </tr>
+                <tr>
+                    <td class="label-col">Subtotal</td>
+                    <td class="value-col">{{currency subtotal}}</td>
+                </tr>
+                <tr>
+                    <td class="label-col">Envío</td>
+                    <td class="value-col">{{#if freeShipping}}GRATIS{{else}}{{currency shippingCost}}{{/if}}</td>
+                </tr>
+                {{#if discount}}
+                <tr>
+                    <td class="label-col">Descuento</td>
+                    <td class="value-col">-{{currency discount}}</td>
+                </tr>
+                {{/if}}
                 <tr class="total-row">
                     <td class="label-col">Total pagado</td>
                     <td class="value-col total-value">{{currency total}}</td>

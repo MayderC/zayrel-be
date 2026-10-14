@@ -35,10 +35,11 @@ export class EmailTemplateService {
   private registerHelpers() {
     // Helper for formatting currency
     Handlebars.registerHelper('currency', (value: number) => {
+      const amount = Number(value);
       return new Intl.NumberFormat('es-CR', {
         style: 'currency',
         currency: 'CRC',
-      }).format(value);
+      }).format(Number.isFinite(amount) ? amount : 0);
     });
 
     // Helper for formatting dates

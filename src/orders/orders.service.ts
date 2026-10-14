@@ -38,6 +38,42 @@ export class OrdersService {
     @Inject(forwardRef(() => DashboardService)) private dashboardService: DashboardService,
   ) {}
 
+  private getOrderTotals(order: any, items: any[]) {
+    const readAmount = (value: unknown): number | undefined => {
+      if (value === null || value === undefined || value === '') return undefined;
+      const amount = Number(value);
+      return Number.isFinite(amount) ? amount : undefined;
+    };
+
+    const itemsSubtotal = items.reduce(
+      (sum, item) =>
+        sum + (readAmount(item.quantity) ?? 0) * (readAmount(item.unitPrice) ?? 0),
+      0,
+    );
+    const subtotal = readAmount(order.subtotal) ?? itemsSubtotal;
+    const savedTotal = readAmount(order.total);
+    const savedShippingCost = readAmount(order.shippingCost);
+    const shippingCost = Math.max(
+      0,
+      savedShippingCost ?? (savedTotal === undefined ? 0 : savedTotal - subtotal),
+    );
+
+    return {
+      subtotal,
+      shippingCost,
+      total: savedTotal ?? subtotal + shippingCost,
+    };
+  }
+
+  async saveShippingTotals(orderId: string, subtotal: number, shippingCost: number) {
+    const total = subtotal + shippingCost;
+    await this.orderModel.updateOne(
+      { _id: orderId },
+      { $set: { subtotal, shippingCost, total } },
+    );
+    return { subtotal, shippingCost, total };
+  }
+
   async create(createOrderDto: CreateOrderDto, authenticatedUser?: any) {
     if (createOrderDto.orderType === 'manual_sale' && !createOrderDto.guestInfo?.email?.trim()) {
       throw new BadRequestException(
@@ -90,7 +126,11 @@ export class OrdersService {
 
     const isManualOrder = createOrderDto.orderType === 'manual_sale';
     const subtotal = orderItemsData.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
-    const shippingCost = isManualOrder ? createOrderDto.shippingCost ?? 0 : 0;
+    const shippingCost = isManualOrder
+      ? createOrderDto.shippingCost ?? 0
+      : subtotal >= 40000
+        ? 0
+        : 2500;
     const total = subtotal + shippingCost;
     const initialStatus = isManualOrder
       ? createOrderDto.status ?? 'esperando_pago'
@@ -120,7 +160,9 @@ export class OrdersService {
       shippingAddress: createOrderDto.shippingAddress,
       orderType: createOrderDto.orderType || 'online',
       status: initialStatus,
-      ...(isManualOrder ? { subtotal, shippingCost, total } : {}),
+      subtotal,
+      shippingCost,
+      total,
     });
     const savedOrder = await newOrder.save();
 
@@ -270,11 +312,9 @@ export class OrdersService {
           })
           .exec();
 
-        // Calculate total
-        const subtotal = items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
-        const orderTotal = subtotal + (order.shippingCost || 0);
+        const totals = this.getOrderTotals(order, items);
 
-        return { ...order.toObject(), items, subtotal, total: orderTotal };
+        return { ...order.toObject(), items, ...totals };
       }),
     );
 
@@ -331,11 +371,9 @@ export class OrdersService {
           })
           .exec();
 
-        // Calculate total
-        const subtotal = items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
-        const total = subtotal + (order.shippingCost || 0);
+        const totals = this.getOrderTotals(order, items);
 
-        return { ...order.toObject(), items, subtotal, total };
+        return { ...order.toObject(), items, ...totals };
       }),
     );
 
@@ -352,15 +390,14 @@ export class OrdersService {
         populate: { path: 'product size color' },
       })
       .exec();
-    const subtotal = items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
-    const total = subtotal + (order.shippingCost || 0);
-    return { ...order.toObject(), items, subtotal, total };
+    const totals = this.getOrderTotals(order, items);
+    return { ...order.toObject(), items, ...totals };
   }
 
   async findPublicStatus(id: string) {
     const order = await this.orderModel
       .findById(id)
-      .select('_id status createdAt trackingNumber shippingProvider total shippingCost')
+      .select('_id status createdAt trackingNumber shippingProvider total shippingCost shippingAddress')
       .lean()
       .exec();
     if (!order) throw new NotFoundException('Order not found');
@@ -370,10 +407,7 @@ export class OrdersService {
       .select('quantity unitPrice')
       .lean()
       .exec();
-    const subtotal = items.reduce(
-      (sum, item) => sum + (item.quantity || 0) * (item.unitPrice || 0),
-      0,
-    );
+    const totals = this.getOrderTotals(order, items);
 
     return {
       _id: order._id,
@@ -381,8 +415,9 @@ export class OrdersService {
       createdAt: order.createdAt,
       trackingNumber: order.trackingNumber,
       shippingProvider: order.shippingProvider,
-      shippingCost: order.shippingCost || 0,
-      total: order.total ?? subtotal + (order.shippingCost || 0),
+      hasShipping: Boolean(order.shippingAddress),
+      shippingCost: totals.shippingCost,
+      total: totals.total,
       itemCount: items.reduce((sum, item) => sum + (item.quantity || 0), 0),
     };
   }
@@ -444,15 +479,14 @@ export class OrdersService {
     if (isNewProofUpload) {
       // Fetch items to calculate total and display detailed list
       const items = await this.orderItemModel.find({ orderId: order._id }).lean();
-      const subtotal = items.reduce((sum, item: any) => sum + item.quantity * item.unitPrice, 0);
-      const total = subtotal + (order.shippingCost || 0);
+      const totals = this.getOrderTotals(order, items);
 
       const notificationPayload = {
         ...order.toObject(),
         user: order.user,
         guestInfo: order.guestInfo,
         items,
-        total,
+        ...totals,
       };
 
       this.notificationsService.notifyPaymentProofReceived(notificationPayload).catch((err) => {
@@ -469,15 +503,14 @@ export class OrdersService {
 
       // Get order items and calculate total for notification
       const items = await this.orderItemModel.find({ orderId: order._id }).lean();
-      const subtotal = items.reduce((sum, item: any) => sum + item.quantity * item.unitPrice, 0);
-      const total = subtotal + (order.shippingCost || 0);
+      const totals = this.getOrderTotals(order, items);
 
       const notificationPayload = {
         ...order.toObject(),
         user: order.user,
         guestInfo: order.guestInfo,
         items,
-        total,
+        ...totals,
       };
 
       await this.notificationsService.notifyPaymentApproved(notificationPayload);
@@ -486,15 +519,14 @@ export class OrdersService {
     if (proofDto.status === 'rejected') {
       // Get order items and calculate total for notification
       const items = await this.orderItemModel.find({ orderId: order._id }).lean();
-      const subtotal = items.reduce((sum, item: any) => sum + item.quantity * item.unitPrice, 0);
-      const total = subtotal + (order.shippingCost || 0);
+      const totals = this.getOrderTotals(order, items);
 
       const notificationPayload = {
         ...order.toObject(),
         user: order.user,
         guestInfo: order.guestInfo,
         items,
-        total,
+        ...totals,
       };
 
       await this.notificationsService.notifyPaymentRejected(notificationPayload, proofDto.reason);
@@ -557,15 +589,14 @@ export class OrdersService {
     if (status !== previousStatus) {
       // Prepare payload
       const items = await this.orderItemModel.find({ orderId: order._id }).lean();
-      const subtotal = items.reduce((sum, item: any) => sum + item.quantity * item.unitPrice, 0);
-      const total = subtotal + (order.shippingCost || 0);
+      const totals = this.getOrderTotals(savedOrder, items);
 
       const payload = {
         ...savedOrder.toObject(),
         user: order.user,
         guestInfo: order.guestInfo,
         items,
-        total,
+        ...totals,
       };
 
       if (status === 'en_produccion') {
