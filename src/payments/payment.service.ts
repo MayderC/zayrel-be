@@ -105,6 +105,10 @@ export class PaymentService {
     const SHIPPING_COST = 2500;
     const shippingCost = subtotal >= SHIPPING_THRESHOLD ? 0 : SHIPPING_COST;
 
+    // Persist the amount charged by the gateway so later emails and the public
+    // tracking page can show the same shipping breakdown.
+    await this.ordersService.saveShippingTotals(orderId, subtotal, shippingCost);
+
     // Build order items with product info for line items
     const orderItems = items.map((item: any) => ({
       name: item.variantId?.product?.name || 'Producto',

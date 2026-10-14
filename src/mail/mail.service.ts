@@ -96,7 +96,7 @@ export class MailService {
     // Try primary provider
     try {
       await this.primaryProvider.sendMail(mailOptions);
-      this.logger.log(`✅ Email sent via ${this.primaryProvider.name} to ${finalRecipient}`);
+      this.logger.log(`✅ Email accepted by ${this.primaryProvider.name} for ${finalRecipient}`);
       return;
     } catch (primaryError) {
       this.logger.error(
@@ -109,7 +109,7 @@ export class MailService {
         try {
           await this.fallbackProvider.sendMail(mailOptions);
           this.logger.log(
-            `✅ Email sent via fallback (${this.fallbackProvider.name}) to ${finalRecipient}`,
+            `✅ Email accepted by fallback (${this.fallbackProvider.name}) for ${finalRecipient}`,
           );
           return;
         } catch (fallbackError) {
@@ -217,6 +217,28 @@ export class MailService {
     return order.guestInfo?.email || order.user?.email || order.shippingAddress?.email || null;
   }
 
+  getOrderNotificationCopyAddress(customerEmail?: string | null): string | undefined {
+    const configuredAddress =
+      this.configService.get<string>('MAIL_AUDIT_EMAIL') ||
+      this.configService.get<string>('ADMIN_EMAIL') ||
+      this.configService.get<string>('MAIL_USER');
+    if (!configuredAddress) return undefined;
+
+    const copyAddress = configuredAddress.match(/<([^>]+)>/)?.[1] || configuredAddress;
+    const normalizedCopy = copyAddress.trim().toLowerCase();
+    if (
+      !normalizedCopy.includes('@') ||
+      normalizedCopy === customerEmail?.trim().toLowerCase()
+    ) {
+      return undefined;
+    }
+    return copyAddress.trim();
+  }
+
+  isRedirectingEmailsToTestRecipient(): boolean {
+    return this.isTestMode && Boolean(this.testRecipient);
+  }
+
   /**
    * Helper to get customer name from order
    */
@@ -241,6 +263,38 @@ export class MailService {
     return methods[method] || method;
   }
 
+  private readAmount(value: unknown): number | undefined {
+    if (
+      value === null ||
+      value === undefined ||
+      (typeof value === 'string' && value.trim() === '')
+    ) {
+      return undefined;
+    }
+    const amount = Number(value);
+    return Number.isFinite(amount) ? amount : undefined;
+  }
+
+  private getOrderTotals(order: any, items: any[]) {
+    const itemsSubtotal = items.reduce((sum, item) => {
+      const quantity = this.readAmount(item.quantity) ?? 0;
+      const unitPrice = this.readAmount(item.unitPrice) ?? 0;
+      return sum + quantity * unitPrice;
+    }, 0);
+
+    const subtotal = this.readAmount(order.subtotal) ?? itemsSubtotal;
+    const discount = this.readAmount(order.discount) ?? 0;
+    const orderTotal = this.readAmount(order.total);
+    const explicitShippingCost = this.readAmount(order.shippingCost);
+    const shippingCost = Math.max(
+      0,
+      explicitShippingCost ?? Math.max(0, (orderTotal ?? subtotal) - subtotal + discount),
+    );
+    const total = orderTotal ?? subtotal + shippingCost - discount;
+
+    return { subtotal, shippingCost, discount, total };
+  }
+
   /**
    * Send order confirmation email when order is created
    * @param order - The order object with all details
@@ -256,14 +310,19 @@ export class MailService {
     const paymentMethod = order.paymentProof?.method || 'manual';
 
     // Prepare items with calculated totals
-    const items = (order.items || []).map((item: any) => ({
-      name: item.name || 'Producto',
-      quantity: item.quantity,
-      size: item.size,
-      color: item.color,
-      unitPrice: item.unitPrice,
-      total: item.quantity * item.unitPrice,
-    }));
+    const items = (order.items || []).map((item: any) => {
+      const quantity = this.readAmount(item.quantity) ?? 0;
+      const unitPrice = this.readAmount(item.unitPrice) ?? 0;
+      return {
+        name: item.name || 'Producto',
+        quantity,
+        size: item.size,
+        color: item.color,
+        unitPrice,
+        total: quantity * unitPrice,
+      };
+    });
+    const totals = this.getOrderTotals(order, items);
 
     const html = this.templateService.render('order-confirmation', {
       ...this.getCommonTemplateVars(),
@@ -271,11 +330,11 @@ export class MailService {
       customerName: this.getCustomerName(order),
       orderNumber,
       items,
-      subtotal: order.subtotal || order.total,
-      shippingCost: order.shippingCost || 0,
-      freeShipping: (order.shippingCost || 0) === 0,
-      discount: order.discount || 0,
-      total: order.total,
+      subtotal: totals.subtotal,
+      shippingCost: totals.shippingCost,
+      freeShipping: totals.shippingCost === 0,
+      discount: totals.discount,
+      total: totals.total,
       paymentMethodDisplay: this.getPaymentMethodDisplay(paymentMethod),
       shippingAddress: order.shippingAddress || {},
       isManualPayment:
@@ -285,6 +344,7 @@ export class MailService {
 
     await this.sendMail({
       to: customerEmail,
+      bcc: this.getOrderNotificationCopyAddress(customerEmail),
       subject: `🛍️ Orden #${orderNumber} confirmada - ${this.brandName}`,
       html,
     });
@@ -304,21 +364,27 @@ export class MailService {
     const orderNumber = order._id.toString().slice(-8).toUpperCase();
     const paymentMethod = order.paymentProof?.method || 'manual';
 
-    const items = (order.items || []).map((item: any) => ({
-      name: item.productName || item.name || 'Producto',
-      quantity: item.quantity,
-      size: item.size,
-      color: item.color,
-      unitPrice: item.unitPrice,
-      total: item.quantity * item.unitPrice,
-    }));
+    const items = (order.items || []).map((item: any) => {
+      const quantity = this.readAmount(item.quantity) ?? 0;
+      const unitPrice = this.readAmount(item.unitPrice) ?? 0;
+      return {
+        name: item.productName || item.name || 'Producto',
+        quantity,
+        size: item.size,
+        color: item.color,
+        unitPrice,
+        total: quantity * unitPrice,
+      };
+    });
+    const totals = this.getOrderTotals(order, items);
 
     const html = this.templateService.render('payment-approved', {
       ...this.getCommonTemplateVars(),
       email: customerEmail,
       customerName: this.getCustomerName(order),
       orderNumber,
-      total: order.total,
+      ...totals,
+      freeShipping: totals.shippingCost === 0,
       paymentMethodDisplay: this.getPaymentMethodDisplay(paymentMethod),
       transactionId: order.paymentProof?.reference || null,
       paymentDate: new Date(),
@@ -329,6 +395,7 @@ export class MailService {
 
     await this.sendMail({
       to: customerEmail,
+      bcc: this.getOrderNotificationCopyAddress(customerEmail),
       subject: `✅ Pago aprobado - Orden #${orderNumber} - ${this.brandName}`,
       html,
     });
@@ -360,6 +427,7 @@ export class MailService {
 
     await this.sendMail({
       to: customerEmail,
+      bcc: this.getOrderNotificationCopyAddress(customerEmail),
       subject: `❌ Comprobante rechazado - Orden #${orderNumber} - ${this.brandName}`,
       html,
     });
@@ -404,6 +472,7 @@ export class MailService {
 
     await this.sendMail({
       to: customerEmail,
+      bcc: this.getOrderNotificationCopyAddress(customerEmail),
       subject: `📋 Comprobante recibido - Orden #${orderNumber} - ${this.brandName}`,
       html,
     });
@@ -439,6 +508,7 @@ export class MailService {
 
     await this.sendMail({
       to: customerEmail,
+      bcc: this.getOrderNotificationCopyAddress(customerEmail),
       subject: `🛠️ Tu pedido está en producción - Orden #${orderNumber} - ${this.brandName}`,
       html,
     });
@@ -465,6 +535,7 @@ export class MailService {
 
     await this.sendMail({
       to: customerEmail,
+      bcc: this.getOrderNotificationCopyAddress(customerEmail),
       subject: `🚀 ¡Tu pedido ha sido enviado! - Orden #${orderNumber} - ${this.brandName}`,
       html,
     });
@@ -489,6 +560,7 @@ export class MailService {
 
     await this.sendMail({
       to: customerEmail,
+      bcc: this.getOrderNotificationCopyAddress(customerEmail),
       subject: `📦 Pedido entregado - Orden #${orderNumber} - ${this.brandName}`,
       html,
     });

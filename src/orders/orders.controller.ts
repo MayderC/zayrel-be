@@ -67,11 +67,12 @@ export class OrdersController {
     return this.ordersService.findMyOrders(req.user._id, req.user.email);
   }
 
-  // Hybrid - guests can access their orders, users need to be owner/admin
+  // Email links return a tracking summary without personal order data.
+  // Keep guest access and owner/admin checks for authenticated customer orders.
   @Get(':id')
   @UseGuards(OptionalJwtAuthGuard, OrderAccessGuard)
   findOne(@Param('id') id: string) {
-    return this.ordersService.findOne(id);
+    return this.ordersService.findPublicStatus(id);
   }
 
   // Hybrid - guests can upload proof, users need to be owner/admin
