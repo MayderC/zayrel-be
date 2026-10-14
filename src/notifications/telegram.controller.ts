@@ -36,6 +36,12 @@ export class TelegramController {
       const result = await this.telegramService.handleCallbackQuery(update.callback_query);
 
       if (result.success && result.action && result.orderId) {
+        const workflowMessages: Record<string, string> = {
+          move_to_produccion: '✅ Pedido movido a producción.',
+          move_to_enviada: '✅ Pedido marcado como enviado.',
+          move_to_completada: '✅ Pedido marcado como completado.',
+        };
+
         try {
           if (result.action === 'approved') {
             // Update payment proof status to verified
@@ -51,17 +57,42 @@ export class TelegramController {
             });
             this.logger.log(`❌ Order ${result.orderId} payment rejected via Telegram`);
           } else if (result.action === 'move_to_produccion') {
-            await this.ordersService.updateStatus(result.orderId, 'en_produccion');
+            const order = await this.ordersService.updateStatus(result.orderId, 'en_produccion');
+            if (order.status !== 'en_produccion') {
+              throw new Error(`Order status was not saved as en_produccion (got ${order.status})`);
+            }
             this.logger.log(`🛠️ Order ${result.orderId} moved to production via Telegram`);
           } else if (result.action === 'move_to_enviada') {
-            await this.ordersService.updateStatus(result.orderId, 'enviada');
+            const order = await this.ordersService.updateStatus(result.orderId, 'enviada');
+            if (order.status !== 'enviada') {
+              throw new Error(`Order status was not saved as enviada (got ${order.status})`);
+            }
             this.logger.log(`🚀 Order ${result.orderId} marked as shipped via Telegram`);
           } else if (result.action === 'move_to_completada') {
-            await this.ordersService.updateStatus(result.orderId, 'completada');
+            const order = await this.ordersService.updateStatus(result.orderId, 'completada');
+            if (order.status !== 'completada') {
+              throw new Error(`Order status was not saved as completada (got ${order.status})`);
+            }
             this.logger.log(`📦 Order ${result.orderId} marked as completed via Telegram`);
           }
+          const confirmation = workflowMessages[result.action];
+          if (confirmation) {
+            await this.telegramService.finishWorkflowCallback(
+              update.callback_query,
+              confirmation,
+            );
+          }
         } catch (error) {
-          this.logger.error(`Failed to update order: ${error.message}`);
+          this.logger.error(
+            `Failed to process Telegram action ${result.action} for order ${result.orderId}: ${error.message}`,
+            error.stack,
+          );
+          if (workflowMessages[result.action]) {
+            await this.telegramService.finishWorkflowCallback(
+              update.callback_query,
+              '❌ No se pudo actualizar el pedido. Revisa su estado en el dashboard.',
+            );
+          }
         }
       }
     }

@@ -213,70 +213,97 @@ export class TelegramService {
       return { success: false };
     }
 
-    const [action, orderId] = data.split(':');
+    const separatorIndex = typeof data === 'string' ? data.indexOf(':') : -1;
+    if (separatorIndex < 0) {
+      await this.answerCallback(queryId, 'Este botón no contiene una orden válida.');
+      this.logger.warn(`Telegram callback has invalid data: ${String(data)}`);
+      return { success: false };
+    }
+
+    const rawAction = data.slice(0, separatorIndex);
+    const orderId = data.slice(separatorIndex + 1);
+    if (!orderId) {
+      await this.answerCallback(queryId, 'Este botón no contiene una orden válida.');
+      this.logger.warn(`Telegram callback has no order ID: ${rawAction}`);
+      return { success: false };
+    }
+
+    // Accept callbacks already sent by previous bot versions as well as the current names.
+    const actionAliases: Record<string, string> = {
+      move_produccion: 'move_produccion',
+      move_to_produccion: 'move_produccion',
+      move_to_production: 'move_produccion',
+      move_production: 'move_produccion',
+      move_enviada: 'move_enviada',
+      move_to_enviada: 'move_enviada',
+      move_to_shipped: 'move_enviada',
+      move_completada: 'move_completada',
+      move_to_completada: 'move_completada',
+      move_to_completed: 'move_completada',
+    };
+    const action = actionAliases[rawAction] || rawAction;
+    this.logger.log(`Telegram callback action=${rawAction} order=${orderId}`);
 
     // Handle confirmation steps using template buttons
     if (action === 'approve_step1') {
+      await this.answerCallback(queryId, '¿Confirmar aprobación?');
       await this.editMessageButtons(
         message.chat.id,
         message.message_id,
         PAYMENT_REVIEW_BUTTONS.confirmApprove(orderId),
       );
-      await this.answerCallback(queryId, '¿Confirmar aprobación?');
       return { success: true };
     }
 
     if (action === 'reject_step1') {
+      await this.answerCallback(queryId, '¿Confirmar rechazo?');
       await this.editMessageButtons(
         message.chat.id,
         message.message_id,
         PAYMENT_REVIEW_BUTTONS.confirmReject(orderId),
       );
-      await this.answerCallback(queryId, '¿Confirmar rechazo?');
       return { success: true };
     }
 
     if (action === 'cancel') {
+      await this.answerCallback(queryId, 'Cancelado');
       await this.editMessageButtons(
         message.chat.id,
         message.message_id,
         PAYMENT_REVIEW_BUTTONS.initial(orderId),
       );
-      await this.answerCallback(queryId, 'Cancelado');
       return { success: true };
     }
 
     if (action === 'approve_confirm') {
+      await this.answerCallback(queryId, 'Procesando aprobación…');
       await this.deleteMessage(message.chat.id, message.message_id);
-      await this.answerCallback(queryId, '✅ Pago aprobado - mensaje eliminado');
       return { success: true, action: 'approved', orderId };
     }
 
     if (action === 'reject_confirm') {
+      await this.answerCallback(queryId, 'Procesando rechazo…');
       await this.deleteMessage(message.chat.id, message.message_id);
-      await this.answerCallback(queryId, '❌ Pago rechazado - mensaje eliminado');
       return { success: true, action: 'rejected', orderId };
     }
 
     // Workflow actions - move order to next status
     if (action === 'move_produccion') {
-      await this.deleteMessage(message.chat.id, message.message_id);
-      await this.answerCallback(queryId, '🛠️ Moviendo a Producción...');
+      await this.answerCallback(queryId, 'Actualizando pedido a producción…');
       return { success: true, action: 'move_to_produccion', orderId };
     }
 
     if (action === 'move_enviada') {
-      await this.deleteMessage(message.chat.id, message.message_id);
-      await this.answerCallback(queryId, '🚀 Marcando como Enviada...');
+      await this.answerCallback(queryId, 'Actualizando pedido a enviado…');
       return { success: true, action: 'move_to_enviada', orderId };
     }
 
     if (action === 'move_completada') {
-      await this.deleteMessage(message.chat.id, message.message_id);
-      await this.answerCallback(queryId, '📦 Marcando como Completada...');
+      await this.answerCallback(queryId, 'Actualizando pedido a completado…');
       return { success: true, action: 'move_to_completada', orderId };
     }
 
+    await this.answerCallback(queryId, 'Este botón ya no está disponible.');
     return { success: false };
   }
 
@@ -430,10 +457,53 @@ export class TelegramService {
    * Answer callback query (shows toast in Telegram)
    */
   private async answerCallback(queryId: string, text: string): Promise<void> {
-    await axios.post(`${this.baseUrl}/answerCallbackQuery`, {
-      callback_query_id: queryId,
-      text,
-    });
+    try {
+      await axios.post(
+        `${this.baseUrl}/answerCallbackQuery`,
+        {
+          callback_query_id: queryId,
+          text,
+        },
+        { timeout: 5000 },
+      );
+    } catch (error) {
+      this.logger.error(`Failed to acknowledge Telegram button: ${error.message}`);
+    }
+  }
+
+  /** Remove a processed workflow button and report its result in the same Telegram topic. */
+  async finishWorkflowCallback(callbackQuery: any, text: string): Promise<void> {
+    const message = callbackQuery?.message;
+    if (!message?.chat?.id) return;
+
+    try {
+      await axios.post(
+        `${this.baseUrl}/editMessageReplyMarkup`,
+        {
+          chat_id: message.chat.id,
+          message_id: message.message_id,
+          reply_markup: { inline_keyboard: [] },
+        },
+        { timeout: 5000 },
+      );
+    } catch (error) {
+      this.logger.warn(`Could not remove processed Telegram order button: ${error.message}`);
+    }
+
+    try {
+      await axios.post(
+        `${this.baseUrl}/sendMessage`,
+        {
+          chat_id: message.chat.id,
+          message_thread_id: message.message_thread_id,
+          reply_to_message_id: message.message_id,
+          text,
+        },
+        { timeout: 5000 },
+      );
+    } catch (error) {
+      this.logger.warn(`Could not report Telegram order update: ${error.message}`);
+    }
   }
 
   /**
