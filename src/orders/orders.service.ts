@@ -381,6 +381,7 @@ export class OrdersService {
       createdAt: order.createdAt,
       trackingNumber: order.trackingNumber,
       shippingProvider: order.shippingProvider,
+      shippingCost: order.shippingCost || 0,
       total: order.total ?? subtotal + (order.shippingCost || 0),
       itemCount: items.reduce((sum, item) => sum + (item.quantity || 0), 0),
     };
