@@ -508,14 +508,20 @@ export class MailService {
 
     const orderNumber = order._id.toString().slice(-8).toUpperCase();
 
-    const items = (order.items || []).map((item: any) => ({
-      name: item.productName || item.name || 'Producto',
-      quantity: item.quantity,
-      size: item.size,
-      color: item.color,
-      unitPrice: item.unitPrice,
-      total: item.quantity * item.unitPrice,
-    }));
+    const items = (order.items || []).map((item: any) => {
+      const quantity = this.readAmount(item.quantity) ?? 0;
+      const unitPrice = this.readAmount(item.unitPrice) ?? 0;
+
+      return {
+        name: item.productName || item.name || 'Artículo',
+        quantity,
+        size: item.size,
+        color: item.color,
+        unitPrice,
+        total: quantity * unitPrice,
+      };
+    });
+    const totals = this.getOrderTotals(order, items);
 
     const html = this.templateService.render('order-in-production', {
       ...this.getCommonTemplateVars(),
@@ -524,6 +530,8 @@ export class MailService {
       orderNumber,
       items,
       itemCount: items.length,
+      ...totals,
+      freeShipping: totals.shippingCost === 0,
       orderUrl: `${this.storeUrl}/order/${order._id}`,
     });
 
@@ -550,7 +558,7 @@ export class MailService {
       customerName: this.getCustomerName(order),
       orderNumber,
       trackingNumber: order.trackingNumber,
-      shippingProvider: order.shippingProvider || 'Correos de Costa Rica',
+      shippingProvider: order.shippingProvider,
       orderUrl: `${this.storeUrl}/order/${order._id}`,
     });
 
@@ -576,6 +584,7 @@ export class MailService {
       email: customerEmail,
       customerName: this.getCustomerName(order),
       orderNumber,
+      hasVtoReward: Boolean(order.user),
       storeUrl: this.storeUrl,
     });
 

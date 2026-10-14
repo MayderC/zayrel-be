@@ -241,23 +241,22 @@
     <div class="container">
         <div class="header">
             <h1>🛠️ En Producción</h1>
-            <p>Tu pedido está siendo confeccionado</p>
+            <p>Tu pedido está en preparación</p>
         </div>
 
         <div class="content">
             <h2 class="greeting">Hola {{customerName}},</h2>
 
             <p class="message">
-                Queríamos contarte que <strong>hemos comenzado a trabajar en tu pedido</strong>. Nuestros artesanos ya
-                están
-                preparando cada detalle con el cuidado que mereces.
+                Queríamos contarte que <strong>hemos comenzado a preparar tu pedido</strong>. Te avisaremos por correo
+                cuando sea enviado.
             </p>
 
             <div class="success-box">
                 <p>✨ <strong>Orden #{{orderNumber}}</strong> - En producción desde ahora</p>
             </div>
 
-            <!-- Product Summary (Simplified) -->
+            <!-- Order summary -->
             <table class="details-table" cellpadding="0" cellspacing="0">
                 <tr>
                     <td class="label-col">Productos</td>
@@ -268,19 +267,50 @@
                         <div style="margin: 10px 0; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0;">
                             <p
                                 style="margin: 15px 0 5px 0; font-size: 11px; color: #888; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">
-                                Resumen</p>
+                                Detalle de productos</p>
                             <table class="products-table">
                                 {{#each items}}
                                 <tr>
                                     <td width="70%" style="vertical-align: top;">
                                         <div style="font-weight: 600; color: #444; font-size: 14px;">{{name}}</div>
-                                        <div style="font-size: 12px; color: #888;">{{quantity}} unidad(es)</div>
+                                        {{#if size}}
+                                        <div style="font-size: 12px; color: #888; margin-top: 2px;">
+                                            Talla: {{size}}{{#if color}} | Color: {{color}}{{/if}}
+                                        </div>
+                                        {{else if color}}
+                                        <div style="font-size: 12px; color: #888; margin-top: 2px;">Color: {{color}}</div>
+                                        {{/if}}
+                                        <div style="font-size: 12px; color: #888; margin-top: 2px;">
+                                            {{quantity}} x {{currency unitPrice}}
+                                        </div>
+                                    </td>
+                                    <td width="30%"
+                                        style="text-align: right; vertical-align: top; font-weight: 500; color: #333;">
+                                        {{currency total}}
                                     </td>
                                 </tr>
                                 {{/each}}
                             </table>
                         </div>
                     </td>
+                </tr>
+                <tr>
+                    <td class="label-col">Subtotal</td>
+                    <td class="value-col">{{currency subtotal}}</td>
+                </tr>
+                <tr>
+                    <td class="label-col">Envío</td>
+                    <td class="value-col">{{#if freeShipping}}GRATIS{{else}}{{currency shippingCost}}{{/if}}</td>
+                </tr>
+                {{#if discount}}
+                <tr>
+                    <td class="label-col">Descuento</td>
+                    <td class="value-col">-{{currency discount}}</td>
+                </tr>
+                {{/if}}
+                <tr class="total-row">
+                    <td class="label-col">Total del pedido</td>
+                    <td class="value-col">{{currency total}}</td>
                 </tr>
             </table>
 
@@ -311,8 +341,7 @@
             </div>
 
             <div class="info-box">
-                <p>⏳ Típicamente los pedidos tardan 3-5 días hábiles en estar listos para envío. Te notificaremos apenas
-                    salga.</p>
+                <p>Te avisaremos por correo cuando tu pedido sea enviado.</p>
             </div>
 
             <div style="text-align: center; margin-top: 30px;">

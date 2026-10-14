@@ -221,19 +221,21 @@
             <h2 class="greeting">Hola {{customerName}},</h2>
 
             <p class="message">
-                ¡Tu espera casi termina! Hemos enviado tu paquete. A continuación encontrarás los detalles para
-                rastrearlo.
+                Hemos enviado tu paquete. Revisa los detalles disponibles a continuación o consulta el estado de tu
+                pedido.
             </p>
 
             <div class="success-box">
-                <p>📦 <strong>Orden #{{orderNumber}}</strong> - Enviada vía {{shippingProvider}}</p>
+                <p>📦 <strong>Orden #{{orderNumber}}</strong> - Enviada{{#if shippingProvider}} vía {{shippingProvider}}{{/if}}</p>
             </div>
 
             <table class="details-table" cellpadding="0" cellspacing="0">
+                {{#if shippingProvider}}
                 <tr>
-                    <td class="label-col">Proveedor</td>
+                    <td class="label-col">Transportista</td>
                     <td class="value-col">{{shippingProvider}}</td>
                 </tr>
+                {{/if}}
                 {{#if trackingNumber}}
                 <tr>
                     <td class="label-col">Guía / Rastro</td>
@@ -268,13 +270,19 @@
                 </div>
             </div>
 
+            {{#if trackingNumber}}
             <div class="info-box">
+                {{#if shippingProvider}}
                 <p>🚚 Puedes rastrear tu paquete en el sitio web de <strong>{{shippingProvider}}</strong> usando tu
                     número de guía.</p>
+                {{else}}
+                <p>🚚 Usa este número de guía para consultar el estado de tu paquete con el transportista.</p>
+                {{/if}}
             </div>
+            {{/if}}
 
             <div style="text-align: center; margin-top: 30px;">
-                <a href="{{orderUrl}}" class="cta-button">Ver Detalles y Rastrear</a>
+                <a href="{{orderUrl}}" class="cta-button">{{#if trackingNumber}}Ver detalles y rastrear{{else}}Ver estado de mi pedido{{/if}}</a>
             </div>
 
             <p style="color: #333; font-size: 16px; margin-top: 30px;">

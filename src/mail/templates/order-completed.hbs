@@ -169,7 +169,7 @@
 
             <p class="message">
                 Hemos confirmado que tu pedido ha sido entregado. Muchas gracias por tu compra.
-                Esperamos que disfrutes tus productos tanto como nosotros disfrutamos creándolos.
+                Esperamos que disfrutes tus productos. Gracias por elegirnos.
             </p>
 
             <div class="success-box">
@@ -204,10 +204,12 @@
                 </div>
             </div>
 
+            {{#if hasVtoReward}}
             <div class="info-box">
                 <p>💎 <strong>Bonus:</strong> Has ganado <strong>+5 tokens VTO</strong> (Probador Virtual) por esta
                     compra. ¡Úsalos en nuestra tienda!</p>
             </div>
+            {{/if}}
 
             <div style="text-align: center; margin-top: 30px;">
                 <a href="{{storeUrl}}" class="cta-button">Ir a la Tienda</a>

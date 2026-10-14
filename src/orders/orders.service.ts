@@ -620,7 +620,32 @@ export class OrdersService {
     // Handle Status Change Notifications
     if (status !== previousStatus) {
       // Prepare payload
-      const items = await this.orderItemModel.find({ orderId: order._id }).lean();
+      const orderItems = await this.orderItemModel
+        .find({ orderId: order._id })
+        .populate({
+          path: 'variantId',
+          populate: [
+            { path: 'product', select: 'name' },
+            { path: 'size', select: 'name' },
+            { path: 'color', select: 'name' },
+          ],
+        })
+        .lean();
+      const items = orderItems.map((item: any) => {
+        const variant = item.variantId && typeof item.variantId === 'object'
+          ? item.variantId
+          : undefined;
+        const productName =
+          variant?.product?.name || item.productName || item.name || 'Artículo';
+
+        return {
+          ...item,
+          name: productName,
+          productName,
+          size: variant?.size?.name || item.size,
+          color: variant?.color?.name || item.color,
+        };
+      });
       const totals = this.getOrderTotals(savedOrder, items);
 
       const payload = {
