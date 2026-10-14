@@ -22,7 +22,7 @@ export class TelegramWebhookGuard implements CanActivate {
   private readonly secretToken: string;
 
   constructor(private readonly configService: ConfigService) {
-    this.secretToken = this.configService.get<string>('TELEGRAM_WEBHOOK_SECRET') || '';
+    this.secretToken = this.configService.get<string>('TELEGRAM_WEBHOOK_SECRET')?.trim() || '';
 
     if (!this.secretToken) {
       this.logger.error(

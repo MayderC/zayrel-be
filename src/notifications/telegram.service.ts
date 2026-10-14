@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import * as FormData from 'form-data';
@@ -24,13 +24,14 @@ import {
  * Templates and message content are defined in telegram-templates.ts
  */
 @Injectable()
-export class TelegramService {
+export class TelegramService implements OnApplicationBootstrap {
   private readonly logger = new Logger(TelegramService.name);
   private readonly botToken: string;
   private readonly groupChatId: string;
   private readonly adminUserId: string;
   private readonly topicRevision: string;
   private readonly baseUrl: string;
+  private readonly webhookUrl: string;
 
   constructor(private readonly configService: ConfigService) {
     this.botToken = this.configService.get<string>('TELEGRAM_BOT_TOKEN') || '';
@@ -38,9 +39,74 @@ export class TelegramService {
     this.adminUserId = this.configService.get<string>('TELEGRAM_ADMIN_USER_ID') || '';
     this.topicRevision = this.configService.get<string>('TELEGRAM_TOPIC_REVISION') || '';
     this.baseUrl = `https://api.telegram.org/bot${this.botToken}`;
+    this.webhookUrl = this.configService.get<string>('TELEGRAM_WEBHOOK_URL')?.trim() || '';
 
     if (!this.botToken || !this.groupChatId) {
       this.logger.warn('⚠️ Telegram credentials not configured. Notifications will be disabled.');
+    }
+  }
+
+  /** Register Telegram's inbound callback endpoint when its public URL is configured. */
+  async onApplicationBootstrap(): Promise<void> {
+    if (!this.botToken) return;
+
+    if (!this.webhookUrl) {
+      try {
+        const { data } = await axios.post(
+          `${this.baseUrl}/getWebhookInfo`,
+          {},
+          { timeout: 8000 },
+        );
+        const info = data?.result || {};
+        this.logger.warn(
+          `TELEGRAM_WEBHOOK_URL is missing; Telegram callbacks cannot be registered by this app. Current webhook: ${info.url || '(none)'}. Pending updates: ${info.pending_update_count ?? 'unknown'}.`,
+        );
+        if (info.last_error_message) {
+          this.logger.error(`Telegram webhook last error: ${info.last_error_message}`);
+        }
+      } catch (error) {
+        this.logger.error(
+          `Could not inspect Telegram webhook: ${error.response?.data?.description || error.code || 'request failed'}`,
+        );
+      }
+      return;
+    }
+
+    const webhookSecret =
+      this.configService.get<string>('TELEGRAM_WEBHOOK_SECRET')?.trim() || '';
+    if (!webhookSecret) {
+      this.logger.error(
+        'TELEGRAM_WEBHOOK_URL is set but TELEGRAM_WEBHOOK_SECRET is missing; webhook was not registered.',
+      );
+      return;
+    }
+
+    try {
+      const webhook = new URL(this.webhookUrl);
+      if (webhook.protocol !== 'https:') {
+        throw new Error('TELEGRAM_WEBHOOK_URL must use HTTPS.');
+      }
+
+      const { data } = await axios.post(
+        `${this.baseUrl}/setWebhook`,
+        {
+          url: this.webhookUrl,
+          secret_token: webhookSecret,
+          allowed_updates: ['callback_query'],
+          drop_pending_updates: false,
+        },
+        { timeout: 10000 },
+      );
+
+      if (!data?.ok) {
+        throw new Error(data?.description || 'Telegram rejected the webhook registration.');
+      }
+
+      this.logger.log(`Telegram callback webhook registered at ${this.webhookUrl}`);
+    } catch (error) {
+      this.logger.error(
+        `Could not register Telegram webhook: ${error.response?.data?.description || error.code || error.message}`,
+      );
     }
   }
 

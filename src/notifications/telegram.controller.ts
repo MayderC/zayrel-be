@@ -29,7 +29,13 @@ export class TelegramController {
   @Post('webhook')
   @UseGuards(TelegramWebhookGuard)
   async handleWebhook(@Body() update: any) {
-    this.logger.debug(`Received Telegram update: ${JSON.stringify(update)}`);
+    if (update?.callback_query) {
+      this.logger.log(
+        `Received Telegram callback: ${update.callback_query.data || '(no callback data)'}`,
+      );
+    } else {
+      this.logger.debug(`Received Telegram update: ${JSON.stringify(update)}`);
+    }
 
     // Handle callback queries (button presses)
     if (update.callback_query) {
