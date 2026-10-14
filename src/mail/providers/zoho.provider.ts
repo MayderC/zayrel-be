@@ -18,6 +18,7 @@ export class ZohoProvider implements EmailProvider {
 
     await this.mailerService.sendMail({
       to: options.to,
+      bcc: options.bcc,
       subject: options.subject,
       html: options.html,
       from: options.from,

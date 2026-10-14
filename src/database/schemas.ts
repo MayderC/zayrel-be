@@ -442,7 +442,11 @@ export const ProductListingSchema = SchemaFactory.createForClass(ProductListing)
 // ORDER
 // -----------------------------
 // Represents an order placed by a user, with status tracking.
-export type OrderDocument = Order & Document;
+export type OrderDocument = Order &
+  Document & {
+    createdAt: Date;
+    updatedAt: Date;
+  };
 @Schema({ _id: false })
 export class PaymentProof {
   @Prop({ required: false })

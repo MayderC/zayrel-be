@@ -5,6 +5,7 @@
 
 export interface SendMailOptions {
   to: string;
+  bcc?: string | string[];
   subject: string;
   html: string;
   from?: string;
