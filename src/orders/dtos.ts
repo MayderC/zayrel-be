@@ -28,23 +28,29 @@ export class GuestInfoDto {
 }
 
 export class ShippingAddressDto {
+  @IsOptional()
   @IsString()
-  street: string;
+  street?: string;
 
+  @IsOptional()
   @IsString()
-  city: string;
+  city?: string;
 
+  @IsOptional()
   @IsString()
-  state: string;
+  state?: string;
 
+  @IsOptional()
   @IsString()
-  zipRegion: string;
+  zipRegion?: string;
 
+  @IsOptional()
   @IsString()
-  country: string;
+  country?: string;
 
+  @IsOptional()
   @IsString()
-  phone: string;
+  phone?: string;
 }
 
 export class CreateOrderItemDto {

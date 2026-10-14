@@ -324,6 +324,14 @@ export class MailService {
     });
     const totals = this.getOrderTotals(order, items);
 
+    const shippingAddress = order.shippingAddress || {};
+    const hasShippingAddress = [
+      shippingAddress.street,
+      shippingAddress.city,
+      shippingAddress.state,
+      shippingAddress.zipRegion,
+    ].some((value) => typeof value === 'string' && value.trim().length > 0);
+
     const html = this.templateService.render('order-confirmation', {
       ...this.getCommonTemplateVars(),
       email: customerEmail,
@@ -336,7 +344,8 @@ export class MailService {
       discount: totals.discount,
       total: totals.total,
       paymentMethodDisplay: this.getPaymentMethodDisplay(paymentMethod),
-      shippingAddress: order.shippingAddress || {},
+      shippingAddress,
+      hasShippingAddress,
       isManualPayment:
         paymentMethod === 'manual' || paymentMethod === 'sinpe' || paymentMethod === 'transfer',
       orderUrl: `${this.storeUrl}/order/${order._id}`,
@@ -378,6 +387,14 @@ export class MailService {
     });
     const totals = this.getOrderTotals(order, items);
 
+    const shippingAddress = order.shippingAddress || {};
+    const hasShippingAddress = [
+      shippingAddress.street,
+      shippingAddress.city,
+      shippingAddress.state,
+      shippingAddress.zipRegion,
+    ].some((value) => typeof value === 'string' && value.trim().length > 0);
+
     const html = this.templateService.render('payment-approved', {
       ...this.getCommonTemplateVars(),
       email: customerEmail,
@@ -386,6 +403,8 @@ export class MailService {
       ...totals,
       freeShipping: totals.shippingCost === 0,
       paymentMethodDisplay: this.getPaymentMethodDisplay(paymentMethod),
+      shippingAddress,
+      hasShippingAddress,
       transactionId: order.paymentProof?.reference || null,
       paymentDate: new Date(),
       items,

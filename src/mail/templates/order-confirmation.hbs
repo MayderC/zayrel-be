@@ -274,15 +274,17 @@
                 <p>💳 <strong>Método de pago:</strong> {{paymentMethodDisplay}}</p>
             </div>
 
+            {{#if hasShippingAddress}}
             <div class="shipping-address">
                 <h3>📍 Dirección de Envío</h3>
-                <p>
-                    {{shippingAddress.street}}<br>
-                    {{shippingAddress.city}}, {{shippingAddress.state}}<br>
-                    {{shippingAddress.country}}<br>
-                    Tel: {{shippingAddress.phone}}
-                </p>
+                {{#if shippingAddress.street}}<p>{{shippingAddress.street}}</p>{{/if}}
+                {{#if shippingAddress.city}}<p>{{shippingAddress.city}}</p>{{/if}}
+                {{#if shippingAddress.state}}<p>{{shippingAddress.state}}</p>{{/if}}
+                {{#if shippingAddress.zipRegion}}<p>{{shippingAddress.zipRegion}}</p>{{/if}}
+                {{#if shippingAddress.country}}<p>{{shippingAddress.country}}</p>{{/if}}
+                {{#if shippingAddress.phone}}<p>Tel: {{shippingAddress.phone}}</p>{{/if}}
             </div>
+            {{/if}}
 
             {{#if isManualPayment}}
             <div class="next-steps">

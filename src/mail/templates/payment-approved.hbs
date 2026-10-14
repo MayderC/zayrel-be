@@ -336,6 +336,18 @@
                 </tr>
             </table>
 
+            {{#if hasShippingAddress}}
+            <div class="info-box">
+                <p><strong>📍 Dirección de envío</strong></p>
+                {{#if shippingAddress.street}}<p>{{shippingAddress.street}}</p>{{/if}}
+                {{#if shippingAddress.city}}<p>{{shippingAddress.city}}</p>{{/if}}
+                {{#if shippingAddress.state}}<p>{{shippingAddress.state}}</p>{{/if}}
+                {{#if shippingAddress.zipRegion}}<p>{{shippingAddress.zipRegion}}</p>{{/if}}
+                {{#if shippingAddress.country}}<p>{{shippingAddress.country}}</p>{{/if}}
+                {{#if shippingAddress.phone}}<p>Tel: {{shippingAddress.phone}}</p>{{/if}}
+            </div>
+            {{/if}}
+
             <h3 style="color: #333; font-size: 16px; margin-bottom: 20px; text-align: center;">📦 Estado de tu pedido
             </h3>
 

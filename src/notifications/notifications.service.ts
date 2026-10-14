@@ -27,6 +27,9 @@ const EVENT_CONFIG: Record<string, NotificationChannels> = {
   'order.completed': { customer: ['email'], admin: [] },
 };
 
+// WhatsApp has no provider configured; keep phone numbers as order data only.
+const WHATSAPP_NOTIFICATIONS_ENABLED = false;
+
 @Injectable()
 export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name);
@@ -144,18 +147,32 @@ export class NotificationsService {
    * Notify customer when order is created
    * @param order - The order object with all details
    */
-  async notifyOrderCreated(order: any): Promise<void> {
+  async notifyOrderCreated(
+    order: any,
+  ): Promise<{
+    emailStatus: 'accepted' | 'failed';
+    copySent: boolean;
+    redirectedToTestRecipient: boolean;
+  }> {
     const paymentConfirmed = ['pagada', 'en_produccion', 'enviada', 'completada'].includes(
       order.status,
     );
+    const customerEmail = order.guestInfo?.email || order.user?.email || order.shippingAddress?.email;
+    let emailStatus: 'accepted' | 'failed' = 'failed';
+    let copySent = false;
+    const redirectedToTestRecipient = this.mailService.isRedirectingEmailsToTestRecipient();
 
     try {
+      if (!customerEmail) throw new Error('No customer email is available for this order');
+
       if (paymentConfirmed) {
         await this.mailService.sendPaymentApproved(order);
       } else {
         await this.mailService.sendOrderConfirmation(order);
       }
-      this.logger.log(`Order email sent for order ${order._id}`);
+      emailStatus = 'accepted';
+      copySent = Boolean(this.mailService.getOrderNotificationCopyAddress(customerEmail));
+      this.logger.log(`Order email accepted by provider for order ${order._id}`);
     } catch (error) {
       this.logger.error(`Failed to send order notification: ${error.message}`);
       // Don't throw - notification failure shouldn't block order creation
@@ -163,11 +180,9 @@ export class NotificationsService {
 
     const notificationStatus = paymentConfirmed ? 'pagada' : 'esperando_pago';
 
-    try {
-      await this.telegramService.notifyStatusChange(order, notificationStatus);
-    } catch (error) {
-      this.logger.error(`Failed to send Telegram new order notification: ${error.message}`);
-    }
+    this.telegramService.notifyStatusChange(order, notificationStatus).catch((error) =>
+      this.logger.error(`Failed to send Telegram new order notification: ${error.message}`),
+    );
 
     // WhatsApp notification (optional)
     const customerPhone = order.guestInfo?.contact || order.shippingAddress?.phone;
@@ -175,11 +190,16 @@ export class NotificationsService {
       const message = paymentConfirmed
         ? `✅ ¡Pago confirmado! Tu pedido #${order._id.toString().slice(-6)} quedó registrado. Te avisaremos cuando inicie su preparación.`
         : `🛍️ ¡Orden recibida! Tu pedido #${order._id.toString().slice(-6)} está pendiente de pago. Te notificaremos cuando se confirme.`;
-      await this.sendWhatsApp(
-        customerPhone,
-        message,
+      this.sendWhatsApp(customerPhone, message).catch((error) =>
+        this.logger.error(`Failed to send WhatsApp new order notification: ${error.message}`),
       );
     }
+
+    return {
+      emailStatus,
+      copySent: emailStatus === 'accepted' && copySent,
+      redirectedToTestRecipient,
+    };
   }
 
   /**
@@ -247,6 +267,8 @@ export class NotificationsService {
    * TODO: Integrate with WhatsApp Business API or Twilio
    */
   private async sendWhatsApp(phone: string, message: string): Promise<void> {
+    if (!WHATSAPP_NOTIFICATIONS_ENABLED) return;
+
     // Log for now - implement actual WhatsApp API later
     this.logger.debug(`[WHATSAPP] To: ${phone} | Message: ${message}`);
     // TODO: Implement actual WhatsApp sending

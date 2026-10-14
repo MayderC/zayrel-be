@@ -211,14 +211,18 @@ export class OrdersService {
       total,
     };
 
-    // Don't await - let email send in background
-    this.notificationsService.notifyOrderCreated(orderForEmail).catch((err) => {
-      console.error('Failed to send order confirmation email:', err);
-    });
-
     // Notify dashboard SSE of new order (non-blocking)
     this.dashboardService.notifyStatsUpdate().catch((err) => {
       console.error('Failed to notify dashboard:', err);
+    });
+
+    if (isManualOrder) {
+      const emailNotification = await this.notificationsService.notifyOrderCreated(orderForEmail);
+      return { ...savedOrder.toObject(), emailNotification };
+    }
+
+    this.notificationsService.notifyOrderCreated(orderForEmail).catch((err) => {
+      console.error('Failed to send order confirmation email:', err);
     });
 
     return savedOrder;
