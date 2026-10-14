@@ -404,10 +404,29 @@ export class OrdersService {
 
     const items = await this.orderItemModel
       .find({ orderId: order._id })
-      .select('quantity unitPrice')
+      .select('variantId quantity unitPrice')
+      .populate({
+        path: 'variantId',
+        select: 'product size color',
+        populate: { path: 'product size color', select: 'name' },
+      })
       .lean()
       .exec();
     const totals = this.getOrderTotals(order, items);
+    const publicItems = items.map((item: any) => {
+      const quantity = Number(item.quantity) || 0;
+      const unitPrice = Number(item.unitPrice) || 0;
+      const variant = item.variantId;
+
+      return {
+        name: variant?.product?.name || 'Producto',
+        size: variant?.size?.name || null,
+        color: variant?.color?.name || null,
+        quantity,
+        unitPrice,
+        total: quantity * unitPrice,
+      };
+    });
 
     return {
       _id: order._id,
@@ -416,9 +435,11 @@ export class OrdersService {
       trackingNumber: order.trackingNumber,
       shippingProvider: order.shippingProvider,
       hasShipping: Boolean(order.shippingAddress),
+      items: publicItems,
+      subtotal: totals.subtotal,
       shippingCost: totals.shippingCost,
       total: totals.total,
-      itemCount: items.reduce((sum, item) => sum + (item.quantity || 0), 0),
+      itemCount: publicItems.reduce((sum, item) => sum + item.quantity, 0),
     };
   }
 
