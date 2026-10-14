@@ -135,6 +135,10 @@ export class OrdersService {
     const initialStatus = isManualOrder
       ? createOrderDto.status ?? 'esperando_pago'
       : 'esperando_pago';
+    // Store date-only purchases at noon UTC so Costa Rica keeps the selected calendar day.
+    const purchaseDate = isManualOrder && createOrderDto.purchaseDate
+      ? new Date(`${createOrderDto.purchaseDate.slice(0, 10)}T12:00:00.000Z`)
+      : undefined;
 
     // 2. SECURITY: Determine user securely - use authenticated user, ignore DTO.user
     let userIdForOrder: Types.ObjectId | undefined;
@@ -158,6 +162,7 @@ export class OrdersService {
       user: userIdForOrder,
       guestInfo: guestInfoForOrder,
       shippingAddress: createOrderDto.shippingAddress,
+      purchaseDate,
       orderType: createOrderDto.orderType || 'online',
       status: initialStatus,
       subtotal,
@@ -209,6 +214,7 @@ export class OrdersService {
       subtotal,
       shippingCost,
       total,
+      ...(isManualOrder && initialStatus === 'pagada' ? { paymentDate: purchaseDate } : {}),
     };
 
     // Notify dashboard SSE of new order (non-blocking)
@@ -401,7 +407,7 @@ export class OrdersService {
   async findPublicStatus(id: string) {
     const order = await this.orderModel
       .findById(id)
-      .select('_id status createdAt trackingNumber shippingProvider total shippingCost shippingAddress')
+      .select('_id status createdAt purchaseDate trackingNumber shippingProvider total shippingCost shippingAddress')
       .lean()
       .exec();
     if (!order) throw new NotFoundException('Order not found');
@@ -436,6 +442,7 @@ export class OrdersService {
       _id: order._id,
       status: order.status,
       createdAt: order.createdAt,
+      purchaseDate: order.purchaseDate,
       trackingNumber: order.trackingNumber,
       shippingProvider: order.shippingProvider,
       hasShipping: Boolean(order.shippingAddress),

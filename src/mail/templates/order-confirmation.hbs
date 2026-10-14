@@ -223,6 +223,7 @@
             <div class="order-number">
                 <p>Número de Orden</p>
                 <span class="number">#{{orderNumber}}</span>
+                {{#if orderDate}}<p>Fecha de compra: {{date orderDate}}</p>{{/if}}
             </div>
 
             <table class="items-table">

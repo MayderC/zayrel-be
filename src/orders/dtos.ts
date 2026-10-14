@@ -4,6 +4,7 @@ import {
   IsOptional,
   IsString,
   IsEmail,
+  IsDateString,
   ValidateIf,
   ValidateNested,
   IsEnum,
@@ -88,6 +89,10 @@ export class CreateOrderDto {
   @IsOptional()
   @IsIn(['esperando_pago', 'pagada'])
   status?: 'esperando_pago' | 'pagada';
+
+  @IsOptional()
+  @IsDateString()
+  purchaseDate?: string;
 
   @IsEnum(['online', 'manual_sale'])
   @IsOptional()

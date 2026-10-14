@@ -507,6 +507,8 @@ export class Order {
   @Prop({ min: 0 }) shippingCost?: number;
   @Prop({ min: 0 }) total?: number;
 
+  @Prop({ type: Date }) purchaseDate?: Date;
+
   @Prop({ default: 'online', enum: ['online', 'manual_sale'] })
   orderType: string;
 
