@@ -357,6 +357,35 @@ export class OrdersService {
     return { ...order.toObject(), items, subtotal, total };
   }
 
+  async findPublicStatus(id: string) {
+    const order = await this.orderModel
+      .findById(id)
+      .select('_id status createdAt trackingNumber shippingProvider total shippingCost')
+      .lean()
+      .exec();
+    if (!order) throw new NotFoundException('Order not found');
+
+    const items = await this.orderItemModel
+      .find({ orderId: order._id })
+      .select('quantity unitPrice')
+      .lean()
+      .exec();
+    const subtotal = items.reduce(
+      (sum, item) => sum + (item.quantity || 0) * (item.unitPrice || 0),
+      0,
+    );
+
+    return {
+      _id: order._id,
+      status: order.status,
+      createdAt: order.createdAt,
+      trackingNumber: order.trackingNumber,
+      shippingProvider: order.shippingProvider,
+      total: order.total ?? subtotal + (order.shippingCost || 0),
+      itemCount: items.reduce((sum, item) => sum + (item.quantity || 0), 0),
+    };
+  }
+
   async updatePaymentProof(id: string, proofDto: UpdatePaymentProofDto) {
     // Populate user to get email for notifications
     const order = await this.orderModel.findById(id).populate('user');
